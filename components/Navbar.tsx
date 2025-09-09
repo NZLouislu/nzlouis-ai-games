@@ -7,20 +7,15 @@ import Image from "next/image";
 export default function Navbar() {
   const [open, setOpen] = useState(false);
 
-  const items = [{ label: "🛠 AI Fish", href: "/" }];
+  const items = [{ label: "🛠 AI Fish", href: "/ai-fish" }];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/30 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6">
-        <Link
-          href="https://www.nzlouis.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center"
-        >
+        <Link href="/" onClick={() => setOpen(false)}>
           <Image
             src="/images/nzlouis-logo.png"
-            alt="Nzlouis logo — Lu Louis"
+            alt="NZLouis logo — Louis Lu"
             width={100}
             height={30}
             priority
@@ -34,7 +29,6 @@ export default function Navbar() {
               key={i.href}
               href={i.href}
               className="text-sm font-medium hover:text-blue-600 transition-colors"
-              prefetch
             >
               {i.label}
             </Link>
@@ -58,7 +52,6 @@ export default function Navbar() {
                 href={i.href}
                 className="block text-sm font-medium hover:text-blue-600"
                 onClick={() => setOpen(false)}
-                prefetch
               >
                 {i.label}
               </Link>
