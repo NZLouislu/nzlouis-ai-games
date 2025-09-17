@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Plus, Fish } from "lucide-react";
+import { Plus } from "lucide-react";
 
-interface Fish {
+interface FishItem {
   x: number;
   y: number;
   vx: number;
@@ -11,6 +11,8 @@ interface Fish {
   color: string;
   bubbles: { x: number; y: number; life: number }[];
   image?: string;
+  theta?: number;
+  phi?: number;
 }
 
 interface Seaweed {
@@ -41,20 +43,20 @@ interface Food {
 }
 
 export default function AIFishPage() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationRef = useRef<number>(0);
   const [showAddFish, setShowAddFish] = useState(false);
-  const [customFish, setCustomFish] = useState<Fish[]>([]);
+  const [customFish, setCustomFish] = useState<FishItem[]>([]);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [food, setFood] = useState<Food[]>([]);
   const [draggedFood, setDraggedFood] = useState<Food | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const [fish, setFish] = useState<Fish[]>([
-    { x: 100, y: 200, vx: 1, vy: 0.5, size: 30, color: "#FF6B6B", bubbles: [] },
-    { x: 300, y: 150, vx: -1.2, vy: 0.3, size: 25, color: "#4ECDC4", bubbles: [] },
-    { x: 500, y: 250, vx: 0.8, vy: -0.4, size: 35, color: "#45B7D1", bubbles: [] },
+  const [fish, setFish] = useState<FishItem[]>([
+    { x: 100, y: 200, vx: 1, vy: 0.5, size: 60, color: "#FF6B6B", bubbles: [], theta: 0, phi: 0 },
+    { x: 300, y: 150, vx: -1.2, vy: 0.3, size: 50, color: "#4ECDC4", bubbles: [], theta: 0, phi: 0 },
+    { x: 500, y: 250, vx: 0.8, vy: -0.4, size: 70, color: "#45B7D1", bubbles: [], theta: 0, phi: 0 },
   ]);
 
   const [seaweed] = useState<Seaweed[]>([
@@ -88,17 +90,19 @@ export default function AIFishPage() {
 
   const addCustomFish = () => {
     if (uploadedImage) {
-      const newFish: Fish = {
+      const newFish: FishItem = {
         x: Math.random() * 600 + 100,
         y: Math.random() * 200 + 100,
-        vx: (Math.random() - 0.5) * 2,
-        vy: (Math.random() - 0.5) * 2,
-        size: 30,
+        vx: (Math.random() * 0.4 + 0.3) * (Math.random() > 0.5 ? 1 : -1),
+        vy: (Math.random() * 0.2 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
+        size: 60,
         color: "#FFD700",
         bubbles: [],
         image: uploadedImage,
+        theta: 0,
+        phi: 0,
       };
-      setCustomFish(prev => [...prev, newFish]);
+      setFish((prev) => [...prev, newFish]);
       setUploadedImage(null);
       setShowAddFish(false);
       if (fileInputRef.current) {
@@ -114,7 +118,7 @@ export default function AIFishPage() {
       id: Date.now().toString(),
       eaten: false,
     };
-    setFood(prev => [...prev, newFood]);
+    setFood((prev) => [...prev, newFood]);
   };
 
   const handleFoodDragStart = (foodItem: Food) => (event: React.DragEvent) => {
@@ -122,7 +126,7 @@ export default function AIFishPage() {
     setIsDragging(true);
   };
 
-  const handleCanvasDrop = (event: React.DragEvent<HTMLCanvasElement>) => {
+  const handleCanvasDropReact = (event: React.DragEvent<HTMLCanvasElement>) => {
     event.preventDefault();
     if (draggedFood) {
       const rect = canvasRef.current?.getBoundingClientRect();
@@ -130,14 +134,14 @@ export default function AIFishPage() {
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
         createFood(x, y);
-        setFood(prev => prev.filter(f => f.id !== draggedFood.id));
+        setFood((prev) => prev.filter((f) => f.id !== draggedFood.id));
       }
     }
     setDraggedFood(null);
     setIsDragging(false);
   };
 
-  const handleCanvasDragOver = (event: React.DragEvent<HTMLCanvasElement>) => {
+  const handleCanvasDragOverReact = (event: React.DragEvent<HTMLCanvasElement>) => {
     event.preventDefault();
   };
 
@@ -180,9 +184,30 @@ export default function AIFishPage() {
       }
     };
 
+    const onCanvasDropNative = (ev: Event) => {
+      const event = ev as DragEvent;
+      event.preventDefault();
+      if (draggedFood) {
+        const rect = canvas.getBoundingClientRect();
+        if (rect && typeof event.clientX === "number") {
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+          createFood(x, y);
+          setFood((prev) => prev.filter((f) => f.id !== draggedFood.id));
+        }
+      }
+      setDraggedFood(null);
+      setIsDragging(false);
+    };
+
+    const onCanvasDragOverNative = (ev: Event) => {
+      const event = ev as DragEvent;
+      event.preventDefault();
+    };
+
     canvas.addEventListener("click", handleCanvasClick);
-    canvas.addEventListener("drop", handleCanvasDrop);
-    canvas.addEventListener("dragover", handleCanvasDragOver);
+    canvas.addEventListener("drop", onCanvasDropNative);
+    canvas.addEventListener("dragover", onCanvasDragOverNative);
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -191,8 +216,8 @@ export default function AIFishPage() {
       drawSeaweed(ctx, seaweed);
       drawCorals(ctx, corals);
       drawTurtle(ctx, turtle, clickedCreature === "turtle");
-      updateAndDrawFish(ctx, [...fish, ...customFish], setFish, clickedCreature);
-      drawFood(ctx, food, setFood, [...fish, ...customFish]);
+      updateAndDrawFish(ctx, fish, setFish, clickedCreature);
+      drawFood(ctx, food, setFood, fish);
 
       animationRef.current = requestAnimationFrame(animate);
     };
@@ -202,13 +227,13 @@ export default function AIFishPage() {
     return () => {
       window.removeEventListener("resize", resizeCanvas);
       canvas.removeEventListener("click", handleCanvasClick);
-      canvas.removeEventListener("drop", handleCanvasDrop);
-      canvas.removeEventListener("dragover", handleCanvasDragOver);
+      canvas.removeEventListener("drop", onCanvasDropNative);
+      canvas.removeEventListener("dragover", onCanvasDragOverNative);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [fish, seaweed, corals, turtle]);
+  }, []);
 
   const drawSeaEnvironment = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
@@ -220,20 +245,14 @@ export default function AIFishPage() {
 
     for (let i = 0; i < 50; i++) {
       ctx.beginPath();
-      ctx.arc(
-        Math.random() * width,
-        Math.random() * height * 0.8,
-        Math.random() * 2,
-        0,
-        Math.PI * 2
-      );
+      ctx.arc(Math.random() * width, Math.random() * height * 0.8, Math.random() * 2, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
       ctx.fill();
     }
   };
 
-  const drawSeaweed = (ctx: CanvasRenderingContext2D, seaweed: Seaweed[]) => {
-    seaweed.forEach((weed, index) => {
+  const drawSeaweed = (ctx: CanvasRenderingContext2D, seaweedArr: Seaweed[]) => {
+    seaweedArr.forEach((weed, index) => {
       weed.sway += 0.02;
       const swayOffset = Math.sin(weed.sway + index) * 5;
       const time = Date.now() * 0.001;
@@ -259,8 +278,8 @@ export default function AIFishPage() {
     });
   };
 
-  const drawCorals = (ctx: CanvasRenderingContext2D, corals: Coral[]) => {
-    corals.forEach((coral) => {
+  const drawCorals = (ctx: CanvasRenderingContext2D, coralsArr: Coral[]) => {
+    coralsArr.forEach((coral) => {
       ctx.fillStyle = coral.color;
       ctx.beginPath();
       ctx.moveTo(coral.x, coral.y + coral.height);
@@ -273,60 +292,59 @@ export default function AIFishPage() {
       ctx.lineWidth = 2;
       for (let i = 0; i < 3; i++) {
         ctx.beginPath();
-        ctx.arc(
-          coral.x + coral.width / 2 + (i - 1) * 10,
-          coral.y - 10,
-          5,
-          0,
-          Math.PI * 2
-        );
+        ctx.arc(coral.x + coral.width / 2 + (i - 1) * 10, coral.y - 10, 5, 0, Math.PI * 2);
         ctx.stroke();
       }
     });
   };
 
-  const drawTurtle = (ctx: CanvasRenderingContext2D, turtle: Turtle, isClicked: boolean = false) => {
-    turtle.x += turtle.vx;
-    if (turtle.x > 800) turtle.x = -50;
+  const drawTurtle = (ctx: CanvasRenderingContext2D, turtleObj: Turtle, isClicked: boolean = false) => {
+    turtleObj.x += turtleObj.vx;
+    if (turtleObj.x > 800) turtleObj.x = -50;
 
     ctx.save();
     if (isClicked) {
       ctx.scale(1.2, 1.2);
-      ctx.translate(-turtle.x * 0.1, -turtle.y * 0.1);
+      ctx.translate(-turtleObj.x * 0.1, -turtleObj.y * 0.1);
     }
 
     ctx.fillStyle = "#8B4513";
-    ctx.fillRect(turtle.x, turtle.y, 40, 25);
+    ctx.fillRect(turtleObj.x, turtleObj.y, 40, 25);
 
     ctx.fillStyle = "#228B22";
     ctx.beginPath();
-    ctx.arc(turtle.x + 10, turtle.y - 5, 8, 0, Math.PI * 2);
+    ctx.arc(turtleObj.x + 10, turtleObj.y - 5, 8, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = "#000";
     ctx.beginPath();
-    ctx.arc(turtle.x + 8, turtle.y - 3, 2, 0, Math.PI * 2);
+    ctx.arc(turtleObj.x + 8, turtleObj.y - 3, 2, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
   };
 
-  const drawFood = (ctx: CanvasRenderingContext2D, food: Food[], setFood: React.Dispatch<React.SetStateAction<Food[]>>, allFish: Fish[]) => {
-    const updatedFood = food.map(f => {
-      if (f.eaten) return f;
+  const drawFood = (
+    ctx: CanvasRenderingContext2D,
+    foodArr: Food[],
+    setFoodFn: React.Dispatch<React.SetStateAction<Food[]>>,
+    allFish: FishItem[]
+  ) => {
+    const updatedFood = foodArr
+      .map((f) => {
+        if (f.eaten) return f;
+        allFish.forEach((fishItem) => {
+          const distance = Math.sqrt((f.x - fishItem.x) ** 2 + (f.y - fishItem.y) ** 2);
+          if (distance < fishItem.size) {
+            f.eaten = true;
+            fishItem.bubbles.push({ x: fishItem.x, y: fishItem.y, life: 30 });
+          }
+        });
+        return f;
+      })
+      .filter((f) => !f.eaten || f.eaten);
 
-      allFish.forEach(fish => {
-        const distance = Math.sqrt((f.x - fish.x) ** 2 + (f.y - fish.y) ** 2);
-        if (distance < fish.size) {
-          f.eaten = true;
-          fish.bubbles.push({ x: fish.x, y: fish.y, life: 30 });
-        }
-      });
-
-      return f;
-    }).filter(f => !f.eaten || f.eaten);
-
-    updatedFood.forEach(f => {
+    updatedFood.forEach((f) => {
       if (!f.eaten) {
         ctx.fillStyle = "#8B4513";
         ctx.beginPath();
@@ -340,16 +358,23 @@ export default function AIFishPage() {
       }
     });
 
-    setFood(updatedFood.filter(f => !f.eaten));
+    setFoodFn(updatedFood.filter((f) => !f.eaten));
   };
 
-  const updateAndDrawFish = (ctx: CanvasRenderingContext2D, fish: Fish[], setFish: React.Dispatch<React.SetStateAction<Fish[]>>, clickedCreature: string | null = null) => {
-    const updatedFish = fish.map((f) => {
+  const updateAndDrawFish = (
+    ctx: CanvasRenderingContext2D,
+    fishArr: FishItem[],
+    setFishFn: React.Dispatch<React.SetStateAction<FishItem[]>>,
+    clickedCreatureId: string | null = null
+  ) => {
+    const time = Date.now() * 0.001;
+    
+    const updatedFish = fishArr.map((f, index) => {
       f.x += f.vx;
       f.y += f.vy;
 
-      if (f.x < 0 || f.x > 800) f.vx *= -1;
-      if (f.y < 50 || f.y > 350) f.vy *= -1;
+      if (f.x < 0 || f.x > ctx.canvas.width) f.vx *= -1;
+      if (f.y < 50 || f.y > ctx.canvas.height - 50) f.vy *= -1;
 
       if (Math.random() < 0.01) {
         f.bubbles.push({ x: f.x, y: f.y, life: 60 });
@@ -361,11 +386,16 @@ export default function AIFishPage() {
         return bubble.life > 0;
       });
 
+      if (!f.theta) f.theta = 0;
+      if (!f.phi) f.phi = 0;
+      f.theta += Math.PI / 20;
+      f.phi += Math.PI / 30;
+
       return f;
     });
 
     updatedFish.forEach((f, index) => {
-      const isClicked = clickedCreature === `fish-${index}`;
+      const isClicked = clickedCreatureId === `fish-${index}`;
 
       ctx.save();
       if (isClicked) {
@@ -376,41 +406,79 @@ export default function AIFishPage() {
       if (f.image) {
         const img = new Image();
         img.src = f.image;
+        img.onload = () => {
+          ctx.save();
+          ctx.translate(f.x, f.y);
+          ctx.rotate(Math.atan2(f.vy, f.vx));
+          if (f.vx < 0) {
+            ctx.scale(1, -1);
+          }
+          ctx.drawImage(img, -f.size / 2, -f.size / 2, f.size, f.size);
+          ctx.restore();
+        };
         if (img.complete) {
           ctx.save();
+          ctx.translate(f.x, f.y);
+          ctx.rotate(Math.atan2(f.vy, f.vx));
           if (f.vx < 0) {
-            ctx.scale(-1, 1);
-            ctx.drawImage(img, -f.x - f.size, f.y - f.size / 2, f.size * 2, f.size);
-          } else {
-            ctx.drawImage(img, f.x - f.size, f.y - f.size / 2, f.size * 2, f.size);
+            ctx.scale(1, -1);
           }
+          ctx.drawImage(img, -f.size / 2, -f.size / 2, f.size, f.size);
           ctx.restore();
         }
       } else {
+        ctx.save();
+        ctx.translate(f.x, f.y);
+        ctx.rotate(Math.atan2(f.vy, f.vx));
+        ctx.scale(f.vx > 0 ? 1 : -1, 1);
+        
+        // Draw fish body with bezier curves
         ctx.fillStyle = f.color;
         ctx.beginPath();
-        ctx.ellipse(f.x, f.y, f.size, f.size / 2, f.vx > 0 ? 0 : Math.PI, 0, Math.PI * 2);
+        ctx.moveTo(-f.size * 0.8, 0);
+        ctx.bezierCurveTo(-f.size * 0.5, f.size * 0.4, f.size * 0.3, f.size * 0.25, f.size * 0.8, 0);
+        ctx.bezierCurveTo(f.size * 0.3, -f.size * 0.25, -f.size * 0.5, -f.size * 0.4, -f.size * 0.8, 0);
         ctx.fill();
-
+        
+        // Draw animated tail
+        ctx.save();
+        ctx.translate(f.size * 0.8, 0);
+        const tailScale = 0.9 + 0.2 * Math.sin(f.theta || time * 5 + index);
+        ctx.scale(tailScale, 1);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(f.size * 0.15, f.size * 0.25, f.size * 0.5, f.size * 0.2);
+        ctx.quadraticCurveTo(f.size * 0.3, f.size * 0.125, f.size * 0.25, 0);
+        ctx.quadraticCurveTo(f.size * 0.3, -f.size * 0.125, f.size * 0.5, -f.size * 0.2);
+        ctx.quadraticCurveTo(f.size * 0.15, -f.size * 0.25, 0, 0);
+        ctx.fill();
+        ctx.restore();
+        
+        // Draw animated fin
+        ctx.save();
+        ctx.translate(-f.size * 0.1, 0);
+        const finAngle = (Math.PI / 6 + Math.PI / 20 * Math.sin(f.phi || time * 3 + index));
+        ctx.rotate(finAngle);
+        ctx.beginPath();
+        ctx.moveTo(-f.size * 0.125, 0);
+        ctx.bezierCurveTo(-f.size * 0.25, -f.size * 0.25, -f.size * 0.25, -f.size * 0.75, 0, -f.size);
+        ctx.bezierCurveTo(f.size * 0.3, -f.size * 0.625, f.size * 0.2, -f.size * 0.25, 0, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        
+        // Draw eye
         ctx.fillStyle = "#FFF";
         ctx.beginPath();
-        ctx.arc(f.x - f.size / 3, f.y - f.size / 4, 3, 0, Math.PI * 2);
+        ctx.arc(-f.size * 0.2, -f.size * 0.15, f.size * 0.08, 0, Math.PI * 2);
         ctx.fill();
-
+        
         ctx.fillStyle = "#000";
         ctx.beginPath();
-        ctx.arc(f.x - f.size / 3, f.y - f.size / 4, 1.5, 0, Math.PI * 2);
+        ctx.arc(-f.size * 0.15, -f.size * 0.15, f.size * 0.04, 0, Math.PI * 2);
         ctx.fill();
-
-        if (f.vx > 0) {
-          ctx.fillStyle = f.color;
-          ctx.beginPath();
-          ctx.moveTo(f.x + f.size, f.y);
-          ctx.lineTo(f.x + f.size + 10, f.y - 5);
-          ctx.lineTo(f.x + f.size + 10, f.y + 5);
-          ctx.closePath();
-          ctx.fill();
-        }
+        
+        ctx.restore();
       }
 
       f.bubbles.forEach((bubble) => {
@@ -423,55 +491,49 @@ export default function AIFishPage() {
       ctx.restore();
     });
 
-    setFish(updatedFish);
+    setFishFn(updatedFish);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+Cjwvc3ZnPg==')] opacity-30"></div>
+    <div className="w-full min-h-screen bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+Cjwvc3ZnPg==')] opacity-30 pointer-events-none"></div>
 
-      <div className="relative z-10 p-4 sm:p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-lg">AI Fish Aquarium</h1>
+      <div className="relative z-10 w-full h-screen flex flex-col">
+        <div className="flex-1 relative w-full">
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full bg-gradient-to-b from-blue-300/50 to-blue-600/50"
+            onDrop={handleCanvasDropReact}
+            onDragOver={handleCanvasDragOverReact}
+          />
+
+          <div className="absolute right-4 top-20 bg-white/20 backdrop-blur-sm rounded-lg p-4 shadow-lg">
             <button
               onClick={() => setShowAddFish(true)}
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg backdrop-blur-sm transition-all duration-200 flex items-center gap-2 w-full sm:w-auto justify-center"
+              className="mb-3 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg backdrop-blur-sm transition-all duration-200 flex items-center gap-2 justify-center w-full"
             >
-              <Plus size={20} />
+              <Plus size={18} />
               Add Fish
             </button>
-          </div>
 
-          <div className="relative">
-            <canvas
-              ref={canvasRef}
-              className="w-full h-[60vh] sm:h-[70vh] bg-gradient-to-b from-blue-300/50 to-blue-600/50 rounded-2xl shadow-2xl border border-white/20 hover:shadow-3xl transition-shadow duration-300"
-              style={{ maxHeight: "600px", minHeight: "400px" }}
-              onDrop={handleCanvasDrop}
-              onDragOver={handleCanvasDragOver}
-            />
-
-            <div className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm rounded-lg p-3 sm:p-4 shadow-lg">
-              <div className="text-white text-xs sm:text-sm font-medium mb-2">Fish Food</div>
-              <div className="grid grid-cols-2 gap-2">
-                {Array.from({ length: 6 }).map((_, i) => {
-                  const foodItem: Food = {
-                    x: 0,
-                    y: 0,
-                    id: `food-${i}`,
-                    eaten: false,
-                  };
-                  return (
-                    <div
-                      key={i}
-                      className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-400 rounded-full cursor-pointer hover:scale-110 transition-transform"
-                      draggable
-                      onDragStart={handleFoodDragStart(foodItem)}
-                    />
-                  );
-                })}
-              </div>
+            <div className="text-white text-sm font-medium mb-2">Fish Food</div>
+            <div className="grid grid-cols-2 gap-2">
+              {Array.from({ length: 6 }).map((_, i) => {
+                const foodItem: Food = {
+                  x: 0,
+                  y: 0,
+                  id: `food-${i}`,
+                  eaten: false,
+                };
+                return (
+                  <div
+                    key={i}
+                    className="w-4 h-4 bg-yellow-400 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                    draggable
+                    onDragStart={handleFoodDragStart(foodItem)}
+                  />
+                );
+              })}
             </div>
           </div>
         </div>
@@ -479,8 +541,8 @@ export default function AIFishPage() {
 
       {showAddFish && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-4 sm:p-6 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-800">Add Your Fish</h2>
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Add Your Fish</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Upload Fish Image</label>
@@ -498,11 +560,11 @@ export default function AIFishPage() {
                   <img
                     src={uploadedImage}
                     alt="Fish preview"
-                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg mx-auto border-2 border-blue-200"
+                    className="w-20 h-20 object-cover rounded-lg mx-auto border-2 border-blue-200"
                   />
                 </div>
               )}
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex gap-3">
                 <button
                   onClick={() => {
                     setShowAddFish(false);

@@ -3,16 +3,28 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  function handleHome(e?: React.MouseEvent) {
+    setOpen(false);
+    try {
+      window.focus();
+    } catch {}
+    setTimeout(() => {
+      router.push("/");
+    }, 10);
+  }
 
   const items = [{ label: "🛠 AI Fish", href: "/ai-fish" }];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/30 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6">
-        <Link href="/" onClick={() => setOpen(false)}>
+        <Link href="/" onClick={handleHome} aria-label="Home">
           <Image
             src="/images/nzlouis-logo.png"
             alt="NZLouis logo — Louis Lu"
