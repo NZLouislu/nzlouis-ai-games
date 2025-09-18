@@ -57,7 +57,7 @@ export default function AirBalloonPage() {
     trees: [] as Tree[],
     backgroundTrees: [] as BackgroundTree[],
     horizontalPadding: 0,
-    verticalPadding: 0
+    verticalPadding: 0,
   });
 
   const sinus = (degree: number): number => {
@@ -98,7 +98,10 @@ export default function AirBalloonPage() {
     const lastTree = state.backgroundTrees[state.backgroundTrees.length - 1];
     const furthestX = lastTree ? lastTree.x : 0;
 
-    const x = furthestX + minimumGap + Math.floor(Math.random() * (maximumGap - minimumGap));
+    const x =
+      furthestX +
+      minimumGap +
+      Math.floor(Math.random() * (maximumGap - minimumGap));
     const treeColors = ["#6D8821", "#8FAC34", "#98B333"];
     const color = treeColors[Math.floor(Math.random() * 3)];
 
@@ -134,7 +137,12 @@ export default function AirBalloonPage() {
     setShowIntro(true);
   }, [generateTree, generateBackgroundTree]);
 
-  const drawCircle = (ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number) => {
+  const drawCircle = (
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    radius: number
+  ) => {
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
     ctx.fill();
@@ -202,10 +210,11 @@ export default function AirBalloonPage() {
 
   const drawHeader = (ctx: CanvasRenderingContext2D) => {
     const state = gameStateRef.current;
-    
+
     ctx.strokeStyle = state.fuel <= 30 ? "red" : "white";
     ctx.strokeRect(30, 30, 150, 30);
-    ctx.fillStyle = state.fuel <= 30 ? "rgba(255,0,0,0.5)" : "rgba(150,150,200,0.5)";
+    ctx.fillStyle =
+      state.fuel <= 30 ? "rgba(255,0,0,0.5)" : "rgba(150,150,200,0.5)";
     ctx.fillRect(30, 30, (150 * state.fuel) / 100, 30);
 
     const score = Math.floor(state.balloonX / 30);
@@ -224,30 +233,57 @@ export default function AirBalloonPage() {
     ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
   };
 
-  const getHillY = (x: number, baseHeight: number, speedMultiplier: number, amplitude: number, stretch: number): number => {
+  const getHillY = (
+    x: number,
+    baseHeight: number,
+    speedMultiplier: number,
+    amplitude: number,
+    stretch: number
+  ): number => {
     const state = gameStateRef.current;
     const sineBaseY = -baseHeight;
-    return sinus((state.balloonX * speedMultiplier + x) * stretch) * amplitude + sineBaseY;
+    return (
+      sinus((state.balloonX * speedMultiplier + x) * stretch) * amplitude +
+      sineBaseY
+    );
   };
 
-  const getTreeY = (x: number, baseHeight: number, amplitude: number): number => {
+  const getTreeY = (
+    x: number,
+    baseHeight: number,
+    amplitude: number
+  ): number => {
     const sineBaseY = -baseHeight;
     return sinus(x) * amplitude + sineBaseY;
   };
 
-  const drawHill = (ctx: CanvasRenderingContext2D, baseHeight: number, speedMultiplier: number, amplitude: number, stretch: number, color: string) => {
+  const drawHill = (
+    ctx: CanvasRenderingContext2D,
+    baseHeight: number,
+    speedMultiplier: number,
+    amplitude: number,
+    stretch: number,
+    color: string
+  ) => {
     ctx.beginPath();
     ctx.moveTo(0, window.innerHeight);
     ctx.lineTo(0, getHillY(0, baseHeight, speedMultiplier, amplitude, stretch));
     for (let i = 0; i <= window.innerWidth; i++) {
-      ctx.lineTo(i, getHillY(i, baseHeight, speedMultiplier, amplitude, stretch));
+      ctx.lineTo(
+        i,
+        getHillY(i, baseHeight, speedMultiplier, amplitude, stretch)
+      );
     }
     ctx.lineTo(window.innerWidth, window.innerHeight);
     ctx.fillStyle = color;
     ctx.fill();
   };
 
-  const drawBackgroundTree = (ctx: CanvasRenderingContext2D, x: number, color: string) => {
+  const drawBackgroundTree = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    color: string
+  ) => {
     const state = gameStateRef.current;
     ctx.save();
     ctx.translate(
@@ -261,7 +297,12 @@ export default function AirBalloonPage() {
     const treeCrownWidth = 10;
 
     ctx.fillStyle = "#7D833C";
-    ctx.fillRect(-treeTrunkWidth / 2, -treeTrunkHeight, treeTrunkWidth, treeTrunkHeight);
+    ctx.fillRect(
+      -treeTrunkWidth / 2,
+      -treeTrunkHeight,
+      treeTrunkWidth,
+      treeTrunkHeight
+    );
 
     ctx.beginPath();
     ctx.moveTo(-treeCrownWidth / 2, -treeTrunkHeight);
@@ -275,12 +316,35 @@ export default function AirBalloonPage() {
 
   const drawBackgroundHills = (ctx: CanvasRenderingContext2D) => {
     const state = gameStateRef.current;
-    
-    drawHill(ctx, hill1BaseHeight, hill1Speed, hill1Amplitude, hill1Stretch, "#AAD155");
-    drawHill(ctx, hill2BaseHeight, hill2Speed, hill2Amplitude, hill2Stretch, "#84B249");
-    drawHill(ctx, hill3BaseHeight, hill3Speed, hill3Amplitude, hill3Stretch, "#26532B");
 
-    state.backgroundTrees.forEach((tree) => drawBackgroundTree(ctx, tree.x, tree.color));
+    drawHill(
+      ctx,
+      hill1BaseHeight,
+      hill1Speed,
+      hill1Amplitude,
+      hill1Stretch,
+      "#AAD155"
+    );
+    drawHill(
+      ctx,
+      hill2BaseHeight,
+      hill2Speed,
+      hill2Amplitude,
+      hill2Stretch,
+      "#84B249"
+    );
+    drawHill(
+      ctx,
+      hill3BaseHeight,
+      hill3Speed,
+      hill3Amplitude,
+      hill3Stretch,
+      "#26532B"
+    );
+
+    state.backgroundTrees.forEach((tree) =>
+      drawBackgroundTree(ctx, tree.x, tree.color)
+    );
   };
 
   const getDistance = (point1: Point, point2: Point): number => {
@@ -369,7 +433,11 @@ export default function AirBalloonPage() {
       state.trees.push(generateTree());
     }
 
-    if (state.backgroundTrees[0].x - (state.balloonX * hill1Speed - state.horizontalPadding) < -40) {
+    if (
+      state.backgroundTrees[0].x -
+        (state.balloonX * hill1Speed - state.horizontalPadding) <
+      -40
+    ) {
       state.backgroundTrees.shift();
       state.backgroundTrees.push(generateBackgroundTree());
     }
@@ -405,12 +473,15 @@ export default function AirBalloonPage() {
     resetGame();
   };
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === " ") {
-      event.preventDefault();
-      resetGame();
-    }
-  }, [resetGame]);
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === " ") {
+        event.preventDefault();
+        resetGame();
+      }
+    },
+    [resetGame]
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -452,7 +523,7 @@ export default function AirBalloonPage() {
   }, [gameStarted, animate]);
 
   return (
-    <div className="fixed inset-0 overflow-hidden cursor-pointer select-none pt-16">
+    <div className="fixed inset-0 mt-14 overflow-hidden cursor-pointer select-none pt-16">
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full"
@@ -460,9 +531,9 @@ export default function AirBalloonPage() {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       />
-      
+
       {showIntro && (
-        <div 
+        <div
           className="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-2000"
           style={{ opacity: showIntro ? 1 : 0 }}
         >

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { Plus } from "lucide-react";
+import { useResponsive } from "@/contexts/ResponsiveContext";
 
 interface FishItem {
   x: number;
@@ -43,20 +44,49 @@ interface Food {
 }
 
 export default function AIFishPage() {
+  const { deviceType } = useResponsive();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationRef = useRef<number>(0);
   const [showAddFish, setShowAddFish] = useState(false);
-  const [customFish, setCustomFish] = useState<FishItem[]>([]);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [food, setFood] = useState<Food[]>([]);
   const [draggedFood, setDraggedFood] = useState<Food | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   const [fish, setFish] = useState<FishItem[]>([
-    { x: 100, y: 200, vx: 1, vy: 0.5, size: 60, color: "#FF6B6B", bubbles: [], theta: 0, phi: 0 },
-    { x: 300, y: 150, vx: -1.2, vy: 0.3, size: 50, color: "#4ECDC4", bubbles: [], theta: 0, phi: 0 },
-    { x: 500, y: 250, vx: 0.8, vy: -0.4, size: 70, color: "#45B7D1", bubbles: [], theta: 0, phi: 0 },
+    {
+      x: 100,
+      y: 200,
+      vx: 1,
+      vy: 0.5,
+      size: 60,
+      color: "#FF6B6B",
+      bubbles: [],
+      theta: 0,
+      phi: 0,
+    },
+    {
+      x: 300,
+      y: 150,
+      vx: -1.2,
+      vy: 0.3,
+      size: 50,
+      color: "#4ECDC4",
+      bubbles: [],
+      theta: 0,
+      phi: 0,
+    },
+    {
+      x: 500,
+      y: 250,
+      vx: 0.8,
+      vy: -0.4,
+      size: 70,
+      color: "#45B7D1",
+      bubbles: [],
+      theta: 0,
+      phi: 0,
+    },
   ]);
 
   const [seaweed] = useState<Seaweed[]>([
@@ -123,7 +153,6 @@ export default function AIFishPage() {
 
   const handleFoodDragStart = (foodItem: Food) => (event: React.DragEvent) => {
     setDraggedFood(foodItem);
-    setIsDragging(true);
   };
 
   const handleCanvasDropReact = (event: React.DragEvent<HTMLCanvasElement>) => {
@@ -138,10 +167,11 @@ export default function AIFishPage() {
       }
     }
     setDraggedFood(null);
-    setIsDragging(false);
   };
 
-  const handleCanvasDragOverReact = (event: React.DragEvent<HTMLCanvasElement>) => {
+  const handleCanvasDragOverReact = (
+    event: React.DragEvent<HTMLCanvasElement>
+  ) => {
     event.preventDefault();
   };
 
@@ -151,6 +181,8 @@ export default function AIFishPage() {
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    let isAnimating = true;
 
     const resizeCanvas = () => {
       const rect = canvas.getBoundingClientRect();
@@ -176,12 +208,31 @@ export default function AIFishPage() {
         }
       });
 
-      const turtleDistance = Math.sqrt((x - turtle.x - 20) ** 2 + (y - turtle.y - 12) ** 2);
+      const turtleDistance = Math.sqrt(
+        (x - turtle.x - 20) ** 2 + (y - turtle.y - 12) ** 2
+      );
       if (turtleDistance < 30) {
         setClickedCreature("turtle");
         turtle.vx *= -1;
         setTimeout(() => setClickedCreature(null), 500);
       }
+
+      seaweed.forEach((weed, index) => {
+        const distance = Math.sqrt((x - weed.x) ** 2 + (y - 400) ** 2);
+        if (distance < 30) {
+          setClickedCreature(`seaweed-${index}`);
+          weed.sway += Math.PI;
+          setTimeout(() => setClickedCreature(null), 500);
+        }
+      });
+
+      corals.forEach((coral, index) => {
+        if (x >= coral.x && x <= coral.x + coral.width && 
+            y >= coral.y && y <= coral.y + coral.height) {
+          setClickedCreature(`coral-${index}`);
+          setTimeout(() => setClickedCreature(null), 500);
+        }
+      });
     };
 
     const onCanvasDropNative = (ev: Event) => {
@@ -197,7 +248,6 @@ export default function AIFishPage() {
         }
       }
       setDraggedFood(null);
-      setIsDragging(false);
     };
 
     const onCanvasDragOverNative = (ev: Event) => {
@@ -210,32 +260,47 @@ export default function AIFishPage() {
     canvas.addEventListener("dragover", onCanvasDragOverNative);
 
     const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!isAnimating) return;
 
-      drawSeaEnvironment(ctx, canvas.width, canvas.height);
-      drawSeaweed(ctx, seaweed);
-      drawCorals(ctx, corals);
-      drawTurtle(ctx, turtle, clickedCreature === "turtle");
-      updateAndDrawFish(ctx, fish, setFish, clickedCreature);
-      drawFood(ctx, food, setFood, fish);
+      try {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      animationRef.current = requestAnimationFrame(animate);
+        drawSeaEnvironment(ctx, canvas.width, canvas.height);
+        drawSeaweed(ctx, seaweed);
+        drawCorals(ctx, corals);
+        drawTurtle(ctx, turtle, clickedCreature === "turtle");
+        updateAndDrawFish(ctx, fish, setFish, clickedCreature);
+        drawFood(ctx, food, setFood, fish);
+
+        if (isAnimating) {
+          animationRef.current = requestAnimationFrame(animate);
+        }
+      } catch (error) {
+        console.error("Animation error:", error);
+        isAnimating = false;
+      }
     };
 
     animate();
 
     return () => {
+      isAnimating = false;
       window.removeEventListener("resize", resizeCanvas);
       canvas.removeEventListener("click", handleCanvasClick);
       canvas.removeEventListener("drop", onCanvasDropNative);
       canvas.removeEventListener("dragover", onCanvasDragOverNative);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = 0;
       }
     };
   }, []);
 
-  const drawSeaEnvironment = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  const drawSeaEnvironment = (
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number
+  ) => {
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
     gradient.addColorStop(0, "#87CEEB");
     gradient.addColorStop(0.5, "#4682B4");
@@ -245,16 +310,26 @@ export default function AIFishPage() {
 
     for (let i = 0; i < 50; i++) {
       ctx.beginPath();
-      ctx.arc(Math.random() * width, Math.random() * height * 0.8, Math.random() * 2, 0, Math.PI * 2);
+      ctx.arc(
+        Math.random() * width,
+        Math.random() * height * 0.8,
+        Math.random() * 2,
+        0,
+        Math.PI * 2
+      );
       ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
       ctx.fill();
     }
   };
 
-  const drawSeaweed = (ctx: CanvasRenderingContext2D, seaweedArr: Seaweed[]) => {
+  const drawSeaweed = (
+    ctx: CanvasRenderingContext2D,
+    seaweedArr: Seaweed[]
+  ) => {
     seaweedArr.forEach((weed, index) => {
       weed.sway += 0.02;
-      const swayOffset = Math.sin(weed.sway + index) * 5;
+      const isClicked = clickedCreature === `seaweed-${index}`;
+      const swayOffset = Math.sin(weed.sway + index) * (isClicked ? 15 : 5);
       const time = Date.now() * 0.001;
 
       ctx.strokeStyle = "#228B22";
@@ -272,14 +347,28 @@ export default function AIFishPage() {
         const leafY = 400 - (i * weed.height) / 5;
         const leafWave = Math.sin(time + i * 0.5) * 3;
         ctx.beginPath();
-        ctx.ellipse(weed.x + swayOffset + leafWave, leafY, 8, 3, 0, 0, Math.PI * 2);
+        ctx.ellipse(
+          weed.x + swayOffset + leafWave,
+          leafY,
+          8,
+          3,
+          0,
+          0,
+          Math.PI * 2
+        );
         ctx.fill();
       }
     });
   };
 
   const drawCorals = (ctx: CanvasRenderingContext2D, coralsArr: Coral[]) => {
-    coralsArr.forEach((coral) => {
+    coralsArr.forEach((coral, index) => {
+      const isClicked = clickedCreature === `coral-${index}`;
+      ctx.save();
+      if (isClicked) {
+        ctx.scale(1.2, 1.2);
+        ctx.translate(-coral.x * 0.1, -coral.y * 0.1);
+      }
       ctx.fillStyle = coral.color;
       ctx.beginPath();
       ctx.moveTo(coral.x, coral.y + coral.height);
@@ -292,13 +381,24 @@ export default function AIFishPage() {
       ctx.lineWidth = 2;
       for (let i = 0; i < 3; i++) {
         ctx.beginPath();
-        ctx.arc(coral.x + coral.width / 2 + (i - 1) * 10, coral.y - 10, 5, 0, Math.PI * 2);
+        ctx.arc(
+          coral.x + coral.width / 2 + (i - 1) * 10,
+          coral.y - 10,
+          5,
+          0,
+          Math.PI * 2
+        );
         ctx.stroke();
       }
+      ctx.restore();
     });
   };
 
-  const drawTurtle = (ctx: CanvasRenderingContext2D, turtleObj: Turtle, isClicked: boolean = false) => {
+  const drawTurtle = (
+    ctx: CanvasRenderingContext2D,
+    turtleObj: Turtle,
+    isClicked: boolean = false
+  ) => {
     turtleObj.x += turtleObj.vx;
     if (turtleObj.x > 800) turtleObj.x = -50;
 
@@ -334,7 +434,9 @@ export default function AIFishPage() {
       .map((f) => {
         if (f.eaten) return f;
         allFish.forEach((fishItem) => {
-          const distance = Math.sqrt((f.x - fishItem.x) ** 2 + (f.y - fishItem.y) ** 2);
+          const distance = Math.sqrt(
+            (f.x - fishItem.x) ** 2 + (f.y - fishItem.y) ** 2
+          );
           if (distance < fishItem.size) {
             f.eaten = true;
             fishItem.bubbles.push({ x: fishItem.x, y: fishItem.y, life: 30 });
@@ -368,8 +470,8 @@ export default function AIFishPage() {
     clickedCreatureId: string | null = null
   ) => {
     const time = Date.now() * 0.001;
-    
-    const updatedFish = fishArr.map((f, index) => {
+
+    const updatedFish = fishArr.map((f) => {
       f.x += f.vx;
       f.y += f.vy;
 
@@ -431,15 +533,29 @@ export default function AIFishPage() {
         ctx.translate(f.x, f.y);
         ctx.rotate(Math.atan2(f.vy, f.vx));
         ctx.scale(f.vx > 0 ? 1 : -1, 1);
-        
+
         // Draw fish body with bezier curves
         ctx.fillStyle = f.color;
         ctx.beginPath();
         ctx.moveTo(-f.size * 0.8, 0);
-        ctx.bezierCurveTo(-f.size * 0.5, f.size * 0.4, f.size * 0.3, f.size * 0.25, f.size * 0.8, 0);
-        ctx.bezierCurveTo(f.size * 0.3, -f.size * 0.25, -f.size * 0.5, -f.size * 0.4, -f.size * 0.8, 0);
+        ctx.bezierCurveTo(
+          -f.size * 0.5,
+          f.size * 0.4,
+          f.size * 0.3,
+          f.size * 0.25,
+          f.size * 0.8,
+          0
+        );
+        ctx.bezierCurveTo(
+          f.size * 0.3,
+          -f.size * 0.25,
+          -f.size * 0.5,
+          -f.size * 0.4,
+          -f.size * 0.8,
+          0
+        );
         ctx.fill();
-        
+
         // Draw animated tail
         ctx.save();
         ctx.translate(f.size * 0.8, 0);
@@ -447,37 +563,62 @@ export default function AIFishPage() {
         ctx.scale(tailScale, 1);
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.quadraticCurveTo(f.size * 0.15, f.size * 0.25, f.size * 0.5, f.size * 0.2);
+        ctx.quadraticCurveTo(
+          f.size * 0.15,
+          f.size * 0.25,
+          f.size * 0.5,
+          f.size * 0.2
+        );
         ctx.quadraticCurveTo(f.size * 0.3, f.size * 0.125, f.size * 0.25, 0);
-        ctx.quadraticCurveTo(f.size * 0.3, -f.size * 0.125, f.size * 0.5, -f.size * 0.2);
+        ctx.quadraticCurveTo(
+          f.size * 0.3,
+          -f.size * 0.125,
+          f.size * 0.5,
+          -f.size * 0.2
+        );
         ctx.quadraticCurveTo(f.size * 0.15, -f.size * 0.25, 0, 0);
         ctx.fill();
         ctx.restore();
-        
+
         // Draw animated fin
         ctx.save();
         ctx.translate(-f.size * 0.1, 0);
-        const finAngle = (Math.PI / 6 + Math.PI / 20 * Math.sin(f.phi || time * 3 + index));
+        const finAngle =
+          Math.PI / 6 + (Math.PI / 20) * Math.sin(f.phi || time * 3 + index);
         ctx.rotate(finAngle);
         ctx.beginPath();
         ctx.moveTo(-f.size * 0.125, 0);
-        ctx.bezierCurveTo(-f.size * 0.25, -f.size * 0.25, -f.size * 0.25, -f.size * 0.75, 0, -f.size);
-        ctx.bezierCurveTo(f.size * 0.3, -f.size * 0.625, f.size * 0.2, -f.size * 0.25, 0, 0);
+        ctx.bezierCurveTo(
+          -f.size * 0.25,
+          -f.size * 0.25,
+          -f.size * 0.25,
+          -f.size * 0.75,
+          0,
+          -f.size
+        );
+        ctx.bezierCurveTo(
+          f.size * 0.3,
+          -f.size * 0.625,
+          f.size * 0.2,
+          -f.size * 0.25,
+          0,
+          0
+        );
         ctx.closePath();
         ctx.fill();
         ctx.restore();
-        
+
         // Draw eye
         ctx.fillStyle = "#FFF";
         ctx.beginPath();
         ctx.arc(-f.size * 0.2, -f.size * 0.15, f.size * 0.08, 0, Math.PI * 2);
         ctx.fill();
-        
+
         ctx.fillStyle = "#000";
         ctx.beginPath();
         ctx.arc(-f.size * 0.15, -f.size * 0.15, f.size * 0.04, 0, Math.PI * 2);
         ctx.fill();
-        
+
         ctx.restore();
       }
 
@@ -495,10 +636,10 @@ export default function AIFishPage() {
   };
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 relative overflow-hidden pt-13">
+    <div className="w-full h-full bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 relative" style={{overflow: "hidden"}}>
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+Cjwvc3ZnPg==')] opacity-30 pointer-events-none"></div>
 
-      <div className="relative z-10 w-full h-screen flex flex-col">
+      <div className="relative z-10 w-full h-full flex flex-col">
         <div className="flex-1 relative w-full">
           <canvas
             ref={canvasRef}
@@ -507,64 +648,102 @@ export default function AIFishPage() {
             onDragOver={handleCanvasDragOverReact}
           />
 
-          <div className="absolute right-4 top-20 bg-white/20 backdrop-blur-sm rounded-lg p-4 shadow-lg">
+          <div
+            className={`absolute ${
+              deviceType === "mobile" ? "right-2 top-20" : "right-4 top-20"
+            } bg-white/20 backdrop-blur-sm rounded-lg p-3 shadow-lg`}
+          >
             <button
               onClick={() => setShowAddFish(true)}
-              className="mb-3 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg backdrop-blur-sm transition-all duration-200 flex items-center gap-2 justify-center w-full"
+              className={`mb-2 bg-white/20 hover:bg-white/30 text-white px-2 py-1 rounded-lg backdrop-blur-sm transition-all duration-200 flex items-center gap-1 justify-center w-full ${
+                deviceType === "mobile" ? "text-xs" : "text-sm"
+              }`}
             >
-              <Plus size={18} />
+              <Plus size={deviceType === "mobile" ? 14 : 16} />
               Add Fish
             </button>
 
-            <div className="text-white text-sm font-medium mb-2">Fish Food</div>
-            <div className="grid grid-cols-2 gap-2">
-              {Array.from({ length: 6 }).map((_, i) => {
-                const foodItem: Food = {
-                  x: 0,
-                  y: 0,
-                  id: `food-${i}`,
-                  eaten: false,
-                };
-                return (
-                  <div
-                    key={i}
-                    className="w-4 h-4 bg-yellow-400 rounded-full cursor-pointer hover:scale-110 transition-transform"
-                    draggable
-                    onDragStart={handleFoodDragStart(foodItem)}
-                  />
-                );
-              })}
+            <div
+              className={`text-white font-medium mb-1 ${
+                deviceType === "mobile" ? "text-xs" : "text-sm"
+              }`}
+            >
+              Fish Food
+            </div>
+            <div className="grid grid-cols-3 gap-1">
+              {Array.from({ length: deviceType === "mobile" ? 4 : 6 }).map(
+                (_, i) => {
+                  const foodItem: Food = {
+                    x: 0,
+                    y: 0,
+                    id: `food-${i}`,
+                    eaten: false,
+                  };
+                  return (
+                    <div
+                      key={i}
+                      className={`rounded-full cursor-pointer hover:scale-110 transition-transform ${
+                        deviceType === "mobile" ? "w-3 h-3" : "w-4 h-4"
+                      } bg-yellow-400`}
+                      draggable
+                      onDragStart={handleFoodDragStart(foodItem)}
+                    />
+                  );
+                }
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {showAddFish && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Add Your Fish</h2>
-            <div className="space-y-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2">
+          <div className="bg-white rounded-2xl p-4 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h2
+              className={`font-bold mb-3 text-gray-800 ${
+                deviceType === "mobile" ? "text-lg" : "text-xl"
+              }`}
+            >
+              Add Your Fish
+            </h2>
+            <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Upload Fish Image</label>
+                <label
+                  className={`block font-medium text-gray-700 mb-1 ${
+                    deviceType === "mobile" ? "text-xs" : "text-sm"
+                  }`}
+                >
+                  Upload Fish Image
+                </label>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className={`w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    deviceType === "mobile" ? "text-xs" : "text-sm"
+                  }`}
                 />
               </div>
               {uploadedImage && (
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-2">Preview:</p>
+                  <p
+                    className={`text-gray-600 mb-1 ${
+                      deviceType === "mobile" ? "text-xs" : "text-sm"
+                    }`}
+                  >
+                    Preview:
+                  </p>
                   <img
                     src={uploadedImage}
                     alt="Fish preview"
-                    className="w-20 h-20 object-cover rounded-lg mx-auto border-2 border-blue-200"
+                    className={`object-cover rounded-lg mx-auto border-2 border-blue-200 ${
+                      deviceType === "mobile" ? "w-16 h-16" : "w-20 h-20"
+                    }`}
                   />
                 </div>
               )}
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
                     setShowAddFish(false);
@@ -573,14 +752,18 @@ export default function AIFishPage() {
                       fileInputRef.current.value = "";
                     }
                   }}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg transition-colors"
+                  className={`flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded-lg transition-colors ${
+                    deviceType === "mobile" ? "text-xs" : "text-sm"
+                  }`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={addCustomFish}
                   disabled={!uploadedImage}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg transition-colors"
+                  className={`flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-1 px-2 rounded-lg transition-colors ${
+                    deviceType === "mobile" ? "text-xs" : "text-sm"
+                  }`}
                 >
                   Add Fish
                 </button>

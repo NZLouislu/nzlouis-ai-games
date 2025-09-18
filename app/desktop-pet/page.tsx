@@ -187,7 +187,7 @@ export default function DesktopPetPage() {
   };
 
   return (
-    <main className="h-full bg-black overflow-hidden pt-16">
+    <main className="h-full bg-black overflow-hidden mt-14 pt-16">
       <div className="relative w-full h-[calc(100%-4rem)] overflow-hidden">
         <canvas
           ref={canvasRef}

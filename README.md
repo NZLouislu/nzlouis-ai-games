@@ -20,6 +20,24 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Responsive Design
+
+This project is fully responsive and adapts to all device sizes:
+
+- Mobile (xs): < 480px
+- Tablet (sm): 480px - 639px
+- Laptop (md): 640px - 767px
+- Desktop (lg): 768px - 1023px
+- Wide Screen (xl): 1024px - 1279px
+- Ultra Wide (2xl): 1280px+
+
+The responsive design is implemented using:
+
+- Tailwind CSS responsive utilities
+- Custom device detection hooks
+- Responsive context provider
+- Device-specific styling adjustments
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

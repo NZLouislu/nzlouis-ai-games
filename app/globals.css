@@ -24,3 +24,92 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 响应式容器类 */
+.container {
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: 1rem;
+  padding-left: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1536px;
+  }
+}
+
+/* 响应式隐藏类 */
+@media (max-width: 640px) {
+  .hidden-xs {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .hidden-sm {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .hidden-md {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hidden-lg {
+    display: none !important;
+  }
+}
+
+/* 响应式显示类 */
+@media (max-width: 640px) {
+  .visible-xs {
+    display: block !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .visible-sm {
+    display: block !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .visible-md {
+    display: block !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .visible-lg {
+    display: block !important;
+  }
+}

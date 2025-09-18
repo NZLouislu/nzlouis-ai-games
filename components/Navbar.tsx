@@ -48,7 +48,7 @@ export default function Navbar() {
             <Link
               key={i.href}
               href={i.href}
-              className="text-sm font-medium hover:text-blue-600 transition-colors"
+              className="text-sm font-medium hover:text-blue-600 transition-colors whitespace-nowrap"
             >
               {i.label}
             </Link>
@@ -65,12 +65,12 @@ export default function Navbar() {
 
       {open && (
         <div className="md:hidden border-t bg-white/30 backdrop-blur-md shadow-md">
-          <div className="flex flex-col gap-4 p-4">
+          <div className="flex flex-col gap-4 p-4 max-h-[calc(100vh-80px)] overflow-y-auto">
             {items.map((i) => (
               <Link
                 key={i.href}
                 href={i.href}
-                className="block text-sm font-medium hover:text-blue-600"
+                className="block text-sm font-medium hover:text-blue-600 py-2"
                 onClick={() => setOpen(false)}
               >
                 {i.label}

@@ -1,11 +1,14 @@
 "use client";
 
 import React from "react";
+import { useResponsive } from "@/contexts/ResponsiveContext";
 
 export default function Page() {
+  const { deviceType } = useResponsive();
+
   return (
-    <main className="h-full w-full bg-white text-black overflow-hidden px-4 pt-20">
-      <section className="mx-auto max-w-4xl">
+    <main className="h-full w-full bg-white text-black overflow-hidden px-2 md:px-4 pt-4 pb-4">
+      <section className="mx-auto max-w-4xl h-full flex flex-col">
         <style>{`
 @import url('https://fonts.googleapis.com/css?family=Acme&display=swap');
 @keyframes changeOrder {
@@ -43,9 +46,21 @@ h1 {
   animation: none !important;
 }
 .hand {
-  margin: 20px;
-  width: 200px;
-  height: 200px;
+  margin: 10px;
+  width: ${
+    deviceType === "mobile"
+      ? "120px"
+      : deviceType === "tablet"
+      ? "160px"
+      : "200px"
+  };
+  height: ${
+    deviceType === "mobile"
+      ? "120px"
+      : deviceType === "tablet"
+      ? "160px"
+      : "200px"
+  };
   position: relative;
   transform: rotate(10deg);
   display: inline-block;
@@ -59,37 +74,113 @@ h1 {
   transition: all 0.1s;
 }
 .fist {
-  height: 110px;
-  left: 40px;
-  top: 50px;
-  width: 90px;
+  height: ${
+    deviceType === "mobile"
+      ? "70px"
+      : deviceType === "tablet"
+      ? "90px"
+      : "110px"
+  };
+  left: ${
+    deviceType === "mobile" ? "25px" : deviceType === "tablet" ? "35px" : "40px"
+  };
+  top: ${
+    deviceType === "mobile" ? "30px" : deviceType === "tablet" ? "40px" : "50px"
+  };
+  width: ${
+    deviceType === "mobile" ? "60px" : deviceType === "tablet" ? "70px" : "90px"
+  };
   border-radius: 20px 0 0 20px;
 }
 .finger {
-  width: 70px;
-  height: 30px;
+  width: ${
+    deviceType === "mobile" ? "50px" : deviceType === "tablet" ? "60px" : "70px"
+  };
+  height: ${
+    deviceType === "mobile" ? "20px" : deviceType === "tablet" ? "25px" : "30px"
+  };
   border-radius: 20px;
-  left: 80px;
+  left: ${
+    deviceType === "mobile" ? "60px" : deviceType === "tablet" ? "70px" : "80px"
+  };
   transform-origin: 0 50%;
 }
-.finger-1 { top: 50px; --dif: 0px; }
-.finger-2 { top: 78px; left: 84px; --dif: 4px; }
-.finger-3 { top: 106px; --dif: 0px; }
-.finger-4 { top: 134px; height: 26px; left: 76px; --dif: -8px; }
+.finger-1 { top: ${
+          deviceType === "mobile"
+            ? "30px"
+            : deviceType === "tablet"
+            ? "40px"
+            : "50px"
+        }; --dif: 0px; }
+.finger-2 { top: ${
+          deviceType === "mobile"
+            ? "50px"
+            : deviceType === "tablet"
+            ? "65px"
+            : "78px"
+        }; left: ${
+          deviceType === "mobile"
+            ? "64px"
+            : deviceType === "tablet"
+            ? "74px"
+            : "84px"
+        }; --dif: 4px; }
+.finger-3 { top: ${
+          deviceType === "mobile"
+            ? "70px"
+            : deviceType === "tablet"
+            ? "90px"
+            : "106px"
+        }; --dif: 0px; }
+.finger-4 { top: ${
+          deviceType === "mobile"
+            ? "90px"
+            : deviceType === "tablet"
+            ? "115px"
+            : "134px"
+        }; height: ${
+          deviceType === "mobile"
+            ? "18px"
+            : deviceType === "tablet"
+            ? "22px"
+            : "26px"
+        }; left: ${
+          deviceType === "mobile"
+            ? "56px"
+            : deviceType === "tablet"
+            ? "66px"
+            : "76px"
+        }; --dif: -8px; }
 div.thumb {
-  width: 35px;
-  height: 70px;
+  width: ${
+    deviceType === "mobile" ? "25px" : deviceType === "tablet" ? "30px" : "35px"
+  };
+  height: ${
+    deviceType === "mobile" ? "50px" : deviceType === "tablet" ? "60px" : "70px"
+  };
   border-radius: 0 20px 20px 20px;
-  top: 50px;
-  left: 80px;
+  top: ${
+    deviceType === "mobile" ? "30px" : deviceType === "tablet" ? "40px" : "50px"
+  };
+  left: ${
+    deviceType === "mobile" ? "60px" : deviceType === "tablet" ? "70px" : "80px"
+  };
   border-left: 0 solid;
   box-shadow: -17px 6px 0 -15px black;
 }
 div.arm {
-  width: 22px;
-  height: 70px;
-  left: 20px;
-  top: 70px;
+  width: ${
+    deviceType === "mobile" ? "18px" : deviceType === "tablet" ? "20px" : "22px"
+  };
+  height: ${
+    deviceType === "mobile" ? "50px" : deviceType === "tablet" ? "60px" : "70px"
+  };
+  left: ${
+    deviceType === "mobile" ? "15px" : deviceType === "tablet" ? "18px" : "20px"
+  };
+  top: ${
+    deviceType === "mobile" ? "40px" : deviceType === "tablet" ? "50px" : "70px"
+  };
   border: 0;
   border-top: 2px solid black;
   border-bottom: 2px solid black;
@@ -106,12 +197,24 @@ div.arm {
 }
 .rps-form input[id$="scissors"]:checked ~ div #user-hand .finger-1,
 .rps-form input[id^="scissors"]:checked ~ div #computer-hand .finger-1 {
-  width: 130px;
+  width: ${
+    deviceType === "mobile"
+      ? "90px"
+      : deviceType === "tablet"
+      ? "110px"
+      : "130px"
+  };
   transform:rotate(-5deg);
 }
 .rps-form input[id$="scissors"]:checked ~ div #user-hand .finger-2,
 .rps-form input[id^="scissors"]:checked ~ div #computer-hand .finger-2 {
-  width: 130px;
+  width: ${
+    deviceType === "mobile"
+      ? "90px"
+      : deviceType === "tablet"
+      ? "110px"
+      : "130px"
+  };
   transform:rotate(5deg);
 }
 .rps-form input[id$="paper"]:checked ~ div #user-hand .finger-1,
@@ -122,9 +225,23 @@ div.arm {
 .rps-form input[id^="paper"]:checked ~ div #computer-hand .finger-2,
 .rps-form input[id^="paper"]:checked ~ div #computer-hand .finger-3,
 .rps-form input[id^="paper"]:checked ~ div #computer-hand .finger-4 {
-  left: 124px;
-  left: calc(124px + var(--dif));
-  width: 80px;
+  left: ${
+    deviceType === "mobile"
+      ? "94px"
+      : deviceType === "tablet"
+      ? "104px"
+      : "124px"
+  };
+  left: calc(${
+    deviceType === "mobile"
+      ? "94px"
+      : deviceType === "tablet"
+      ? "104px"
+      : "124px"
+  } + var(--dif));
+  width: ${
+    deviceType === "mobile" ? "60px" : deviceType === "tablet" ? "70px" : "80px"
+  };
   border-left: 0;
   border-radius: 0 20px 20px 0;
 }
@@ -154,34 +271,36 @@ div.arm {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: ${deviceType === "mobile" ? "column" : "row"};
+  gap: ${deviceType === "mobile" ? "20px" : "0"};
 }
 #icons {
-  width: 30px;
-  height: 200px;
+  width: ${deviceType === "mobile" ? "150px" : "30px"};
+  height: ${deviceType === "mobile" ? "30px" : "200px"};
   display: inline-flex;
-  flex-direction: column;
+  flex-direction: ${deviceType === "mobile" ? "row" : "column"};
 }
 #icons > div {
   flex: 1;
   align-items: center;
   justify-content: center;
-  width: 60px;
-  height: 60px;
+  width: ${deviceType === "mobile" ? "40px" : "60px"};
+  height: ${deviceType === "mobile" ? "40px" : "60px"};
   overflow: hidden;
   position: relative;
 }
 label:active {
   position:static; 
-  margin-left: 60px;
+  margin-left: ${deviceType === "mobile" ? "40px" : "60px"};
 }
 label:active::before {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
-  width: 60px;
+  width: ${deviceType === "mobile" ? "40px" : "60px"};
   z-index: 10;
-  height: 60px;
+  height: ${deviceType === "mobile" ? "40px" : "60px"};
 }
 label {
   animation: changeOrder 0.45s infinite linear;
@@ -190,10 +309,10 @@ label {
   box-sizing: border-box;
   cursor: pointer;
   display: block;
-  height: 60px;
-  width: 60px;
-  line-height: 60px;
-  font-size: 2rem;
+  height: ${deviceType === "mobile" ? "40px" : "60px"};
+  width: ${deviceType === "mobile" ? "40px" : "60px"};
+  line-height: ${deviceType === "mobile" ? "40px" : "60px"};
+  font-size: ${deviceType === "mobile" ? "1.5rem" : "2rem"};
   position: absolute;
   top: 0;
   left: 0;
@@ -204,7 +323,7 @@ label:nth-of-type(2) { animation-delay: -0.15s; }
 label:nth-of-type(3) { animation-delay: -0.30s; }
         `}</style>
 
-        <form className="rps-form">
+        <form className="rps-form mt-12 flex-1 flex flex-col">
           <input type="radio" id="rock-rock" name="rock-paper-scissors" />
           <input type="radio" id="rock-paper" name="rock-paper-scissors" />
           <input type="radio" id="rock-scissors" name="rock-paper-scissors" />
@@ -213,11 +332,28 @@ label:nth-of-type(3) { animation-delay: -0.30s; }
           <input type="radio" id="paper-scissors" name="rock-paper-scissors" />
           <input type="radio" id="scissors-rock" name="rock-paper-scissors" />
           <input type="radio" id="scissors-paper" name="rock-paper-scissors" />
-          <input type="radio" id="scissors-scissors" name="rock-paper-scissors" />
+          <input
+            type="radio"
+            id="scissors-scissors"
+            name="rock-paper-scissors"
+          />
 
-          <div>
-            <h1>CSS Rock-Paper-Scissors</h1>
-            <div id="hands">
+          <div className="-mt-23 flex flex-col">
+            <h1
+              className={`text-center mb-4 md:mb-6 ${
+                deviceType === "mobile"
+                  ? "text-xl"
+                  : deviceType === "tablet"
+                  ? "text-2xl"
+                  : "text-4xl"
+              }`}
+            >
+              CSS Rock-Paper-Scissors
+            </h1>
+            <div
+              id="hands"
+              className="items-center justify-center gap-4 md:gap-8"
+            >
               <div className="hand" id="computer-hand">
                 <div className="fist"></div>
                 <div className="finger finger-1"></div>
@@ -238,32 +374,126 @@ label:nth-of-type(3) { animation-delay: -0.30s; }
                 <div className="arm"></div>
               </div>
 
-              <div id="icons">
-                <div>
-                  <label htmlFor="rock-rock">✊</label>
-                  <label htmlFor="paper-rock">✊</label>
-                  <label htmlFor="scissors-rock">✊</label>
+              <div
+                id="icons"
+                className={`${
+                  deviceType === "mobile" ? "w-40 h-10" : "w-30 h-200"
+                } flex ${deviceType === "mobile" ? "flex-row" : "flex-col"}`}
+              >
+                <div className="flex-1 flex items-center justify-center relative">
+                  <label
+                    htmlFor="rock-rock"
+                    className={
+                      deviceType === "mobile"
+                        ? "text-xl"
+                        : "text-2xl md:text-3xl"
+                    }
+                  >
+                    ✊
+                  </label>
+                  <label
+                    htmlFor="paper-rock"
+                    className={
+                      deviceType === "mobile"
+                        ? "text-xl"
+                        : "text-2xl md:text-3xl"
+                    }
+                  >
+                    ✊
+                  </label>
+                  <label
+                    htmlFor="scissors-rock"
+                    className={
+                      deviceType === "mobile"
+                        ? "text-xl"
+                        : "text-2xl md:text-3xl"
+                    }
+                  >
+                    ✊
+                  </label>
                 </div>
-                <div>
-                  <label htmlFor="rock-paper">🖐️</label>
-                  <label htmlFor="paper-paper">🖐️</label>
-                  <label htmlFor="scissors-paper">🖐️</label>
+                <div className="flex-1 flex items-center justify-center relative">
+                  <label
+                    htmlFor="rock-paper"
+                    className={
+                      deviceType === "mobile"
+                        ? "text-xl"
+                        : "text-2xl md:text-3xl"
+                    }
+                  >
+                    🖐️
+                  </label>
+                  <label
+                    htmlFor="paper-paper"
+                    className={
+                      deviceType === "mobile"
+                        ? "text-xl"
+                        : "text-2xl md:text-3xl"
+                    }
+                  >
+                    🖐️
+                  </label>
+                  <label
+                    htmlFor="scissors-paper"
+                    className={
+                      deviceType === "mobile"
+                        ? "text-xl"
+                        : "text-2xl md:text-3xl"
+                    }
+                  >
+                    🖐️
+                  </label>
                 </div>
-                <div>
-                  <label htmlFor="rock-scissors">✌</label>
-                  <label htmlFor="paper-scissors">✌</label>
-                  <label htmlFor="scissors-scissors">✌</label>
+                <div className="flex-1 flex items-center justify-center relative">
+                  <label
+                    htmlFor="rock-scissors"
+                    className={
+                      deviceType === "mobile"
+                        ? "text-xl"
+                        : "text-2xl md:text-3xl"
+                    }
+                  >
+                    ✌
+                  </label>
+                  <label
+                    htmlFor="paper-scissors"
+                    className={
+                      deviceType === "mobile"
+                        ? "text-xl"
+                        : "text-2xl md:text-3xl"
+                    }
+                  >
+                    ✌
+                  </label>
+                  <label
+                    htmlFor="scissors-scissors"
+                    className={
+                      deviceType === "mobile"
+                        ? "text-xl"
+                        : "text-2xl md:text-3xl"
+                    }
+                  >
+                    ✌
+                  </label>
                 </div>
               </div>
             </div>
           </div>
 
-          <div id="message">
-            <h2></h2>
+          <div id="message" className="mt-22 md:mt-4">
+            <h2
+              className={`text-center ${
+                deviceType === "mobile"
+                  ? "text-lg"
+                  : deviceType === "tablet"
+                  ? "text-xl"
+                  : "text-2xl"
+              }`}
+            ></h2>
             <input
               type="reset"
               value="Refresh Round (Click to restart)"
-              className="mt-4 cursor-pointer rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 hover:border-gray-400 active:translate-y-[1px] active:shadow-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-4 cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-1 md:px-4 md:py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 hover:border-gray-400 active:translate-y-[1px] active:shadow-none focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
             />
           </div>
         </form>

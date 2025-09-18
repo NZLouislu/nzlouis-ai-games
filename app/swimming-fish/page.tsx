@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useResponsive } from "@/contexts/ResponsiveContext";
 
 interface SurfacePoint {
   x: number;
@@ -36,11 +37,12 @@ const ACCELERATION_RATE = 0.01;
 const GRAVITY = 0.4;
 
 export default function SwimmingFishPage() {
+  const { deviceType } = useResponsive();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
   const [isRunning, setIsRunning] = useState(true);
-  
+
   const rendererRef = useRef({
     width: 0,
     height: 0,
@@ -50,12 +52,12 @@ export default function SwimmingFishPage() {
     reverse: false,
     pointInterval: 0,
     fishCount: 0,
-    axis: null as { x: number; y: number } | null
+    axis: null as { x: number; y: number } | null,
   });
 
-  const getRandomValue = (min: number, max: number): number => {
+  const getRandomValue = useCallback((min: number, max: number): number => {
     return min + (max - min) * Math.random();
-  };
+  }, []);
 
   const createSurfacePoints = () => {
     const renderer = rendererRef.current;
@@ -68,7 +70,7 @@ export default function SwimmingFishPage() {
       height: renderer.height * INIT_HEIGHT_RATE,
       initHeight: renderer.height * INIT_HEIGHT_RATE,
       fy: 0,
-      force: { previous: 0, next: 0 }
+      force: { previous: 0, next: 0 },
     };
     renderer.points.push(firstPoint);
 
@@ -78,9 +80,9 @@ export default function SwimmingFishPage() {
         height: renderer.height * INIT_HEIGHT_RATE,
         initHeight: renderer.height * INIT_HEIGHT_RATE,
         fy: 0,
-        force: { previous: 0, next: 0 }
+        force: { previous: 0, next: 0 },
       };
-      
+
       const previous = renderer.points[i - 1];
       point.previous = previous;
       previous.next = point;
@@ -88,10 +90,10 @@ export default function SwimmingFishPage() {
     }
   };
 
-  const createFish = (): Fish => {
+  const createFish = useCallback((): Fish => {
     const renderer = rendererRef.current;
     const direction = Math.random() < 0.5;
-    
+
     const fish: Fish = {
       direction,
       x: direction ? renderer.width + THRESHOLD : -THRESHOLD,
@@ -102,7 +104,7 @@ export default function SwimmingFishPage() {
       ay: 0,
       isOut: false,
       theta: 0,
-      phi: 0
+      phi: 0,
     };
 
     if (renderer.reverse) {
@@ -117,27 +119,33 @@ export default function SwimmingFishPage() {
 
     fish.previousY = fish.y;
     return fish;
-  };
+  }, [getRandomValue]);
 
   const generateEpicenter = (x: number, y: number, velocity: number) => {
     const renderer = rendererRef.current;
-    if (y < renderer.height / 2 - THRESHOLD || y > renderer.height / 2 + THRESHOLD) {
+    if (
+      y < renderer.height / 2 - THRESHOLD ||
+      y > renderer.height / 2 + THRESHOLD
+    ) {
       return;
     }
-    
+
     const index = Math.round(x / renderer.pointInterval);
     if (index < 0 || index >= renderer.points.length) {
       return;
     }
-    
+
     const point = renderer.points[index];
-    point.fy = renderer.height * ACCELERATION_RATE * 
-      ((renderer.height - point.height - y) >= 0 ? -1 : 1) * Math.abs(velocity);
+    point.fy =
+      renderer.height *
+      ACCELERATION_RATE *
+      (renderer.height - point.height - y >= 0 ? -1 : 1) *
+      Math.abs(velocity);
   };
 
   const updateSurfacePoints = () => {
     const renderer = rendererRef.current;
-    
+
     for (const point of renderer.points) {
       point.fy += SPRING_CONSTANT * (point.initHeight - point.height);
       point.fy *= SPRING_FRICTION;
@@ -146,7 +154,8 @@ export default function SwimmingFishPage() {
 
     for (const point of renderer.points) {
       if (point.previous) {
-        point.force.previous = WAVE_SPREAD * (point.height - point.previous.height);
+        point.force.previous =
+          WAVE_SPREAD * (point.height - point.previous.height);
       }
       if (point.next) {
         point.force.next = WAVE_SPREAD * (point.height - point.next.height);
@@ -165,62 +174,67 @@ export default function SwimmingFishPage() {
     }
   };
 
-  const updateFish = (fish: Fish) => {
-    const renderer = rendererRef.current;
-    fish.previousY = fish.y;
-    fish.x += fish.vx;
-    fish.y += fish.vy;
-    fish.vy += fish.ay;
+  const updateFish = useCallback(
+    (fish: Fish) => {
+      const renderer = rendererRef.current;
+      fish.previousY = fish.y;
+      fish.x += fish.vx;
+      fish.y += fish.vy;
+      fish.vy += fish.ay;
 
-    if (renderer.reverse) {
-      if (fish.y > renderer.height * INIT_HEIGHT_RATE) {
-        fish.vy -= GRAVITY;
-        fish.isOut = true;
-      } else {
-        if (fish.isOut) {
-          fish.ay = getRandomValue(0.05, 0.2);
+      if (renderer.reverse) {
+        if (fish.y > renderer.height * INIT_HEIGHT_RATE) {
+          fish.vy -= GRAVITY;
+          fish.isOut = true;
+        } else {
+          if (fish.isOut) {
+            fish.ay = getRandomValue(0.05, 0.2);
+          }
+          fish.isOut = false;
         }
-        fish.isOut = false;
-      }
-    } else {
-      if (fish.y < renderer.height * INIT_HEIGHT_RATE) {
-        fish.vy += GRAVITY;
-        fish.isOut = true;
       } else {
-        if (fish.isOut) {
-          fish.ay = getRandomValue(-0.2, -0.05);
+        if (fish.y < renderer.height * INIT_HEIGHT_RATE) {
+          fish.vy += GRAVITY;
+          fish.isOut = true;
+        } else {
+          if (fish.isOut) {
+            fish.ay = getRandomValue(-0.2, -0.05);
+          }
+          fish.isOut = false;
         }
-        fish.isOut = false;
       }
-    }
 
-    if (!fish.isOut) {
-      fish.theta += Math.PI / 20;
-      fish.theta %= Math.PI * 2;
-      fish.phi += Math.PI / 30;
-      fish.phi %= Math.PI * 2;
-    }
+      if (!fish.isOut) {
+        fish.theta += Math.PI / 20;
+        fish.theta %= Math.PI * 2;
+        fish.phi += Math.PI / 30;
+        fish.phi %= Math.PI * 2;
+      }
 
-    generateEpicenter(
-      fish.x + (fish.direction ? -1 : 1) * THRESHOLD,
-      fish.y,
-      fish.y - fish.previousY
-    );
+      generateEpicenter(
+        fish.x + (fish.direction ? -1 : 1) * THRESHOLD,
+        fish.y,
+        fish.y - fish.previousY
+      );
 
-    if ((fish.vx > 0 && fish.x > renderer.width + THRESHOLD) ||
-        (fish.vx < 0 && fish.x < -THRESHOLD)) {
-      const newFish = createFish();
-      Object.assign(fish, newFish);
-    }
-  };
+      if (
+        (fish.vx > 0 && fish.x > renderer.width + THRESHOLD) ||
+        (fish.vx < 0 && fish.x < -THRESHOLD)
+      ) {
+        const newFish = createFish();
+        Object.assign(fish, newFish);
+      }
+    },
+    [getRandomValue, createFish]
+  );
 
   const drawFish = (ctx: CanvasRenderingContext2D, fish: Fish) => {
     ctx.save();
     ctx.translate(fish.x, fish.y);
     ctx.rotate(Math.PI + Math.atan2(fish.vy, fish.vx));
     ctx.scale(1, fish.direction ? 1 : -1);
-    
-    ctx.fillStyle = 'rgba(100, 150, 200, 0.8)';
+
+    ctx.fillStyle = "rgba(100, 150, 200, 0.8)";
     ctx.beginPath();
     ctx.moveTo(-30, 0);
     ctx.bezierCurveTo(-20, 15, 15, 10, 40, 0);
@@ -241,9 +255,11 @@ export default function SwimmingFishPage() {
 
     ctx.save();
     ctx.translate(-3, 0);
-    ctx.rotate((Math.PI / 3 + Math.PI / 10 * Math.sin(fish.phi)) * 
-      (rendererRef.current.reverse ? -1 : 1));
-    
+    ctx.rotate(
+      (Math.PI / 3 + (Math.PI / 10) * Math.sin(fish.phi)) *
+        (rendererRef.current.reverse ? -1 : 1)
+    );
+
     ctx.beginPath();
     if (rendererRef.current.reverse) {
       ctx.moveTo(5, 0);
@@ -260,7 +276,7 @@ export default function SwimmingFishPage() {
     ctx.restore();
   };
 
-  const setup = () => {
+  const setup = useCallback(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
@@ -268,18 +284,19 @@ export default function SwimmingFishPage() {
     const renderer = rendererRef.current;
     renderer.width = container.offsetWidth;
     renderer.height = container.offsetHeight;
-    renderer.fishCount = FISH_COUNT * renderer.width / 500 * renderer.height / 500;
-    
+    renderer.fishCount =
+      (((FISH_COUNT * renderer.width) / 500) * renderer.height) / 500;
+
     canvas.width = renderer.width;
     canvas.height = renderer.height;
-    
+
     renderer.points = [];
     renderer.fishes = [];
     renderer.intervalCount = MAX_INTERVAL_COUNT;
-    
+
     renderer.fishes.push(createFish());
     createSurfacePoints();
-  };
+  }, [createFish]);
 
   const handleMouseMove = (event: React.MouseEvent) => {
     const container = containerRef.current;
@@ -288,14 +305,14 @@ export default function SwimmingFishPage() {
     const rect = container.getBoundingClientRect();
     const axis = {
       x: event.clientX - rect.left,
-      y: event.clientY - rect.top
+      y: event.clientY - rect.top,
     };
 
     const renderer = rendererRef.current;
     if (!renderer.axis) {
       renderer.axis = axis;
     }
-    
+
     generateEpicenter(axis.x, axis.y, axis.y - renderer.axis.y);
     renderer.axis = axis;
   };
@@ -307,14 +324,14 @@ export default function SwimmingFishPage() {
     const rect = container.getBoundingClientRect();
     rendererRef.current.axis = {
       x: event.clientX - rect.left,
-      y: event.clientY - rect.top
+      y: event.clientY - rect.top,
     };
   };
 
   const handleClick = () => {
     const renderer = rendererRef.current;
     renderer.reverse = !renderer.reverse;
-    
+
     for (const fish of renderer.fishes) {
       fish.isOut = !fish.isOut;
       fish.ay *= -1;
@@ -340,7 +357,7 @@ export default function SwimmingFishPage() {
       if (!isRunning) return;
 
       const renderer = rendererRef.current;
-      
+
       updateSurfacePoints();
 
       if (renderer.fishes.length < renderer.fishCount) {
@@ -355,21 +372,21 @@ export default function SwimmingFishPage() {
       }
 
       ctx.clearRect(0, 0, renderer.width, renderer.height);
-      
+
       for (const fish of renderer.fishes) {
         drawFish(ctx, fish);
       }
 
       ctx.save();
-      ctx.globalCompositeOperation = 'xor';
-      ctx.fillStyle = 'rgba(135, 206, 235, 0.3)';
+      ctx.globalCompositeOperation = "xor";
+      ctx.fillStyle = "rgba(135, 206, 235, 0.3)";
       ctx.beginPath();
       ctx.moveTo(0, renderer.reverse ? 0 : renderer.height);
-      
+
       for (const point of renderer.points) {
         ctx.lineTo(point.x, renderer.height - point.height);
       }
-      
+
       ctx.lineTo(renderer.width, renderer.reverse ? 0 : renderer.height);
       ctx.closePath();
       ctx.fill();
@@ -388,7 +405,7 @@ export default function SwimmingFishPage() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isRunning]);
+  }, [isRunning, setup, updateFish, createFish]);
 
   const toggleAnimation = () => {
     setIsRunning(!isRunning);
@@ -399,61 +416,117 @@ export default function SwimmingFishPage() {
   };
 
   return (
-    <div className="h-full bg-gradient-to-b from-blue-100 to-blue-300 relative overflow-hidden pt-16">
-      <div className="absolute top-20 left-4 z-10 bg-white/20 backdrop-blur-sm rounded-lg p-4 space-y-2">
-        <h2 className="text-lg font-bold text-blue-800 mb-4">Swimming Fish Effect</h2>
-        
+    <div className="h-full bg-gradient-to-b from-blue-100 to-blue-300 relative overflow-hidden" style={{overflowX: "hidden"}}>
+      <div
+        className={`absolute top-20 ${
+          deviceType === "mobile" ? "left-2" : "left-4"
+        } z-10 bg-white/20 backdrop-blur-sm rounded-lg p-3 space-y-2 ${
+          deviceType === "mobile" ? "max-w-[calc(100%-1rem)]" : "max-w-xs"
+        }`}
+      >
+        <h2
+          className={`font-bold text-blue-800 ${
+            deviceType === "mobile" ? "text-base mb-2" : "text-lg mb-4"
+          }`}
+        >
+          Swimming Fish Effect
+        </h2>
+
         <button
           onClick={toggleAnimation}
-          className={`px-4 py-2 rounded-lg font-medium transition-all w-full ${
+          className={`px-3 py-1 rounded-lg font-medium transition-all w-full ${
             isRunning
               ? "bg-red-500 hover:bg-red-600 text-white"
               : "bg-green-500 hover:bg-green-600 text-white"
-          }`}
+          } ${deviceType === "mobile" ? "text-sm" : "text-base"}`}
         >
           {isRunning ? "Pause" : "Start"}
         </button>
-        
+
         <button
           onClick={resetAnimation}
-          className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-all"
+          className={`w-full px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-all ${
+            deviceType === "mobile" ? "text-sm" : "text-base"
+          }`}
         >
           Reset
         </button>
-        
-        <div className="text-blue-800 text-xs space-y-1">
+
+        <div
+          className={`text-blue-800 space-y-1 ${
+            deviceType === "mobile" ? "text-xs" : "text-sm"
+          }`}
+        >
           <p>Fish Count: {rendererRef.current.fishes.length}</p>
           <p>Direction: {rendererRef.current.reverse ? "Up" : "Down"}</p>
-          <p>Click water to reverse direction</p>
-          <p>Move mouse over water for ripples</p>
+          {deviceType !== "mobile" && (
+            <>
+              <p>Click water to reverse direction</p>
+              <p>Move mouse over water for ripples</p>
+            </>
+          )}
+          {deviceType === "mobile" && (
+            <>
+              <p>Tap water to reverse direction</p>
+              <p>Move finger over water for ripples</p>
+            </>
+          )}
         </div>
       </div>
 
-      <div 
+      <div
         ref={containerRef}
-        className="fixed bottom-0 left-0 w-full h-48 opacity-90 z-10"
+        className={`fixed bottom-0 left-0 w-full ${
+          deviceType === "mobile"
+            ? "h-24"
+            : deviceType === "tablet"
+            ? "h-32"
+            : "h-48"
+        } opacity-90 z-10`}
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
         onClick={handleClick}
         style={{ cursor: "pointer" }}
       >
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full"
-        />
+        <canvas ref={canvasRef} className="w-full h-full" />
       </div>
 
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center text-blue-800 max-w-2xl px-8">
-          <h1 className="text-4xl font-bold mb-6">Swimming Fish Animation</h1>
-          <p className="text-lg mb-4">
-            Watch the fish swim at the bottom of the screen with realistic water physics.
+      <main className="flex-1 flex items-center justify-center mt-40 px-4">
+        <div className="text-center text-blue-800 max-w-2xl">
+          <h1
+            className={`font-bold mb-4 ${
+              deviceType === "mobile"
+                ? "text-xl"
+                : deviceType === "tablet"
+                ? "text-2xl"
+                : "text-4xl"
+            }`}
+          >
+            Swimming Fish Animation
+          </h1>
+          <p
+            className={`mb-3 ${
+              deviceType === "mobile"
+                ? "text-base"
+                : deviceType === "tablet"
+                ? "text-lg"
+                : "text-xl"
+            }`}
+          >
+            Watch the fish swim at the bottom of the screen with realistic water
+            physics.
           </p>
-          <p className="text-base opacity-80">
-            Move your mouse over the water area to create ripples, or click to reverse the swimming direction.
+          <p
+            className={`${
+              deviceType === "mobile" ? "text-sm" : "text-base"
+            } opacity-80`}
+          >
+            {deviceType === "mobile"
+              ? "Move your finger over the water area to create ripples, or tap to reverse the swimming direction."
+              : "Move your mouse over the water area to create ripples, or click to reverse the swimming direction."}
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

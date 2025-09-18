@@ -274,8 +274,8 @@ export default function Page() {
       loffset = (vw - cw) / 2;
       toffset = (vh - ch) / 2;
 
-      _canvas.width = cw;
-      _canvas.height = ch;
+      _canvas.width = stage.w;
+      _canvas.height = stage.h;
 
       _canvas.style.width = cw + "px";
       _canvas.style.height = ch + "px";
@@ -315,22 +315,34 @@ export default function Page() {
       motchend();
     };
 
+    let isAnimating = true;
+
     const animated = () => {
-      rafRef.current = window.requestAnimationFrame(animated);
-      let trax = 0, tray = 0;
-      if (shake) {
-        trax = Math.random() * 60 - 30;
-        tray = Math.random() * 60 - 30;
-        _ctx.translate(trax, tray);
-      }
-      enginestep();
-      if (shake) {
-        _ctx.translate(-trax, -tray);
-        shaket++;
-        if (shaket > 20) {
-          shaket = 0;
-          shake = false;
+      if (!isAnimating) return;
+
+      try {
+        let trax = 0, tray = 0;
+        if (shake) {
+          trax = Math.random() * 60 - 30;
+          tray = Math.random() * 60 - 30;
+          _ctx.translate(trax, tray);
         }
+        enginestep();
+        if (shake) {
+          _ctx.translate(-trax, -tray);
+          shaket++;
+          if (shaket > 20) {
+            shaket = 0;
+            shake = false;
+          }
+        }
+
+        if (isAnimating) {
+          rafRef.current = window.requestAnimationFrame(animated);
+        }
+      } catch (error) {
+        console.error("Animation error:", error);
+        isAnimating = false;
       }
     };
 
@@ -346,7 +358,11 @@ export default function Page() {
     animated();
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      isAnimating = false;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       window.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
@@ -358,14 +374,12 @@ export default function Page() {
   }, []);
 
   return (
-    <main className="h-full bg-black overflow-hidden pt-16">
-      <div className="relative w-full h-[calc(100%-4rem)]">
-        <canvas
-          ref={canvasRef}
-          id="canvas"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#ecf0f1] block"
-        />
-      </div>
-    </main>
+    <div className="w-full bg-black overflow-hidden flex items-center justify-center" style={{height: "calc(100vh - 64px)", marginTop: "64px"}}>
+      <canvas
+        ref={canvasRef}
+        id="canvas"
+        className="bg-[#ecf0f1] block max-w-full max-h-full"
+      />
+    </div>
   );
 }

@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import { ResponsiveProvider } from "@/contexts/ResponsiveContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,15 +26,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full overflow-hidden">
+    <html lang="en" className="h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full flex flex-col overflow-hidden`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full flex flex-col`}
+        style={{maxWidth: "2000px", margin: "0 auto"}}
       >
-        <Navbar />
-
-        <main className="flex-1 overflow-hidden">{children}</main>
-
-        <Footer className="shrink-0" />
+        <ResponsiveProvider>
+          <Navbar />
+          <main className="flex-1 overflow-y-auto">
+            {children}
+          </main>
+        </ResponsiveProvider>
       </body>
     </html>
   );

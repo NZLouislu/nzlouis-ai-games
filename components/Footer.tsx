@@ -6,10 +6,17 @@ export default function Footer({
 }: ComponentPropsWithoutRef<"footer">) {
   return (
     <footer
-      className={`mt-2 py-6 text-center text-sm text-gray-500 ${className}`}
+      className={`py-4 md:py-6 text-center text-xs md:text-sm text-gray-500 ${className}`}
       {...props}
     >
-      © {new Date().getFullYear()} NZLouis | Louis Lu. All rights reserved.
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-2">
+          <div>
+            © {new Date().getFullYear()} NZLouis | Louis Lu. All rights
+            reserved.
+          </div>
+        </div>
+      </div>
     </footer>
   );
 }
