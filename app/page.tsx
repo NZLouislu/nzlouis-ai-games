@@ -4,7 +4,7 @@ export default function Page() {
   return (
     <>
       <GoogleAnalytics />
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex flex-col items-center justify-center p-8 text-center">
+      <div className="h-full bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex flex-col items-center justify-center p-8 text-center pt-16">
         <div className="relative z-10 max-w-4xl">
           {/* Animated title */}
           <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-400 mb-6 animate-pulse">

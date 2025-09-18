@@ -495,7 +495,7 @@ export default function AIFishPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 relative overflow-hidden">
+    <div className="w-full h-full bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 relative overflow-hidden pt-13">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+Cjwvc3ZnPg==')] opacity-30 pointer-events-none"></div>
 
       <div className="relative z-10 w-full h-screen flex flex-col">

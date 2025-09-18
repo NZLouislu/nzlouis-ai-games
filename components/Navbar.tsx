@@ -9,7 +9,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  function handleHome(e?: React.MouseEvent) {
+  function handleHome() {
     setOpen(false);
     try {
       window.focus();
@@ -19,7 +19,15 @@ export default function Navbar() {
     }, 10);
   }
 
-  const items = [{ label: "🛠 AI Fish", href: "/ai-fish" }];
+  const items = [
+    { label: "🛠 AI Fish", href: "/ai-fish" },
+    { label: "✊🖐️✌ Rock Paper Scissors", href: "/rock-paper-scissors" },
+    { label: "🐟 Swimming Fish", href: "/swimming-fish" },
+    { label: "🏹 Arrows Defense", href: "/arrows-defense" },
+    { label: "🎈 Air Balloon", href: "/air-balloon" },
+    { label: "🐾 Desktop Pet", href: "/desktop-pet" },
+    // { label: "🎰 Gacha Machine", href: "/gacha-machine" }
+  ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/30 backdrop-blur-md">
