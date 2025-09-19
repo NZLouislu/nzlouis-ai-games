@@ -325,9 +325,16 @@ export default function useGameEngine(
     if (circleSpawnTimerRef.current >= CIRCLE_SPAWN_INTERVAL) {
       // Randomly decide whether to spawn a circle (30% chance)
       if (Math.random() < 0.3) {
+        // Calculate circle position to ensure it's reachable by player's double jump
+        // Player starts at groundYRef.current - player.height
+        // After double jump, player can reach approximately groundYRef.current - 150 to groundYRef.current - 100
+        const minY = groundYRef.current - 150; // Minimum height (higher up)
+        const maxY = groundYRef.current - 100; // Maximum height (lower down)
+        const circleY = Math.random() * (maxY - minY) + minY;
+
         circlesRef.current.push({
           x: canvasWidthRef.current,
-          y: 200, // Fixed position in the air
+          y: circleY, // Position within reachable range
           radius: 30, // Large circle
           passed: false,
         });
@@ -358,7 +365,12 @@ export default function useGameEngine(
     // Update canvas dimensions
     canvasWidthRef.current = ctx.canvas.width;
     canvasHeightRef.current = ctx.canvas.height;
-    groundYRef.current = ctx.canvas.height - 80;
+
+    // Calculate ground position based on canvas height, ensuring it's visible on all devices
+    // Use a minimum height for the ground area to ensure it's always visible
+    const minHeight = 100; // Minimum height for ground area
+    const groundHeight = Math.max(minHeight, ctx.canvas.height * 0.2); // 20% of canvas height or minimum height
+    groundYRef.current = ctx.canvas.height - groundHeight;
 
     // Draw background
     const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
@@ -369,12 +381,7 @@ export default function useGameEngine(
 
     // Draw ground
     ctx.fillStyle = "#8B4513";
-    ctx.fillRect(
-      0,
-      groundYRef.current,
-      ctx.canvas.width,
-      ctx.canvas.height - groundYRef.current
-    );
+    ctx.fillRect(0, groundYRef.current, ctx.canvas.width, groundHeight);
 
     // Draw circles
     circlesRef.current.forEach((circle) => {

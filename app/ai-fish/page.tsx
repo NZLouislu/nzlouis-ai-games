@@ -516,8 +516,31 @@ export default function AIFishPage() {
     ctx.rotate(Math.PI + Math.atan2(fish.vy, fish.vx));
     ctx.scale(1, fish.vx < 0 ? -1 : 1);
 
+    if (fish.image) {
+      const img = new Image();
+      img.src = fish.image;
+      const scale = fish.size / 30;
+      const imgWidth = 60 * scale;
+      const imgHeight = 30 * scale;
+
+      if (img.complete) {
+        ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+      } else {
+        drawDefaultFish(ctx, fish, scale);
+      }
+    } else {
+      drawDefaultFish(ctx, fish, fish.size / 30);
+    }
+
+    ctx.restore();
+  };
+
+  const drawDefaultFish = (
+    ctx: CanvasRenderingContext2D,
+    fish: FishItem,
+    scale: number
+  ) => {
     // Scale the fish based on its size
-    const scale = fish.size / 30;
     ctx.scale(scale, scale);
 
     // Draw fish body
@@ -581,8 +604,6 @@ export default function AIFishPage() {
     // When fin is down (vy <= 0), eye is at (-23, 5)
     ctx.arc(-23, fish.vy > 0 ? -5 : 5, 2, 0, Math.PI * 2);
     ctx.fill();
-
-    ctx.restore();
   };
 
   const updateAndDrawFish = (
