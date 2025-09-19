@@ -12,8 +12,8 @@ interface FishItem {
   color: string;
   bubbles: { x: number; y: number; life: number }[];
   image?: string;
-  theta?: number;
-  phi?: number;
+  theta: number;
+  phi: number;
 }
 
 interface Seaweed {
@@ -54,12 +54,13 @@ export default function AIFishPage() {
   const [draggedFood, setDraggedFood] = useState<Food | null>(null);
 
   const [fish, setFish] = useState<FishItem[]>([
+    // 原有的3条鱼
     {
       x: 100,
       y: 200,
       vx: 1,
       vy: 0.5,
-      size: 60,
+      size: 30,
       color: "#FF6B6B",
       bubbles: [],
       theta: 0,
@@ -70,7 +71,7 @@ export default function AIFishPage() {
       y: 150,
       vx: -1.2,
       vy: 0.3,
-      size: 50,
+      size: 30,
       color: "#4ECDC4",
       bubbles: [],
       theta: 0,
@@ -81,8 +82,53 @@ export default function AIFishPage() {
       y: 250,
       vx: 0.8,
       vy: -0.4,
-      size: 70,
+      size: 30,
       color: "#45B7D1",
+      bubbles: [],
+      theta: 0,
+      phi: 0,
+    },
+    // 从Small Fish页面添加的4条小鱼
+    {
+      x: 150,
+      y: 300,
+      vx: 1.2,
+      vy: 0.3,
+      size: 30,
+      color: "#FF6B6B", // 红色
+      bubbles: [],
+      theta: 0,
+      phi: 0,
+    },
+    {
+      x: 250,
+      y: 350,
+      vx: -0.8,
+      vy: -0.2,
+      size: 30,
+      color: "#4169E1", // 蓝色
+      bubbles: [],
+      theta: 0,
+      phi: 0,
+    },
+    {
+      x: 400,
+      y: 280,
+      vx: 1.0,
+      vy: 0.4,
+      size: 30,
+      color: "#87CEEB", // 浅蓝色
+      bubbles: [],
+      theta: 0,
+      phi: 0,
+    },
+    {
+      x: 550,
+      y: 320,
+      vx: -1.1,
+      vy: -0.3,
+      size: 30,
+      color: "#FFD700", // 黄色
       bubbles: [],
       theta: 0,
       phi: 0,
@@ -121,10 +167,10 @@ export default function AIFishPage() {
   const addCustomFish = () => {
     if (uploadedImage) {
       const newFish: FishItem = {
-        x: Math.random() * 600 + 100,
+        x: Math.random() * 400 + 100,
         y: Math.random() * 200 + 100,
-        vx: (Math.random() * 0.4 + 0.3) * (Math.random() > 0.5 ? 1 : -1),
-        vy: (Math.random() * 0.2 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
+        vx: (Math.random() * 0.5 + 0.2) * (Math.random() > 0.5 ? 1 : -1),
+        vy: (Math.random() * 0.3 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
         size: 60,
         color: "#FFD700",
         bubbles: [],
@@ -153,18 +199,17 @@ export default function AIFishPage() {
 
   const handleFoodDragStart = (foodItem: Food) => (event: React.DragEvent) => {
     setDraggedFood(foodItem);
+    event.dataTransfer.setData("text/plain", foodItem.id);
+    event.dataTransfer.effectAllowed = "copy";
   };
 
   const handleCanvasDropReact = (event: React.DragEvent<HTMLCanvasElement>) => {
     event.preventDefault();
-    if (draggedFood) {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (rect) {
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        createFood(x, y);
-        setFood((prev) => prev.filter((f) => f.id !== draggedFood.id));
-      }
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      createFood(x, y);
     }
     setDraggedFood(null);
   };
@@ -173,6 +218,7 @@ export default function AIFishPage() {
     event: React.DragEvent<HTMLCanvasElement>
   ) => {
     event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
   };
 
   useEffect(() => {
@@ -227,8 +273,12 @@ export default function AIFishPage() {
       });
 
       corals.forEach((coral, index) => {
-        if (x >= coral.x && x <= coral.x + coral.width && 
-            y >= coral.y && y <= coral.y + coral.height) {
+        if (
+          x >= coral.x &&
+          x <= coral.x + coral.width &&
+          y >= coral.y &&
+          y <= coral.y + coral.height
+        ) {
           setClickedCreature(`coral-${index}`);
           setTimeout(() => setClickedCreature(null), 500);
         }
@@ -238,14 +288,11 @@ export default function AIFishPage() {
     const onCanvasDropNative = (ev: Event) => {
       const event = ev as DragEvent;
       event.preventDefault();
-      if (draggedFood) {
-        const rect = canvas.getBoundingClientRect();
-        if (rect && typeof event.clientX === "number") {
-          const x = event.clientX - rect.left;
-          const y = event.clientY - rect.top;
-          createFood(x, y);
-          setFood((prev) => prev.filter((f) => f.id !== draggedFood.id));
-        }
+      const rect = canvas.getBoundingClientRect();
+      if (rect && typeof event.clientX === "number") {
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        createFood(x, y);
       }
       setDraggedFood(null);
     };
@@ -269,8 +316,8 @@ export default function AIFishPage() {
         drawSeaweed(ctx, seaweed);
         drawCorals(ctx, corals);
         drawTurtle(ctx, turtle, clickedCreature === "turtle");
-        updateAndDrawFish(ctx, fish, setFish, clickedCreature);
-        drawFood(ctx, food, setFood, fish);
+        updateAndDrawFish(ctx, fish, setFish, clickedCreature, food, setFood);
+        drawFood(ctx, food, fish);
 
         if (isAnimating) {
           animationRef.current = requestAnimationFrame(animate);
@@ -294,7 +341,7 @@ export default function AIFishPage() {
         animationRef.current = 0;
       }
     };
-  }, []);
+  }, [fish, food, clickedCreature]);
 
   const drawSeaEnvironment = (
     ctx: CanvasRenderingContext2D,
@@ -427,56 +474,166 @@ export default function AIFishPage() {
   const drawFood = (
     ctx: CanvasRenderingContext2D,
     foodArr: Food[],
-    setFoodFn: React.Dispatch<React.SetStateAction<Food[]>>,
     allFish: FishItem[]
   ) => {
-    const updatedFood = foodArr
-      .map((f) => {
-        if (f.eaten) return f;
-        allFish.forEach((fishItem) => {
-          const distance = Math.sqrt(
-            (f.x - fishItem.x) ** 2 + (f.y - fishItem.y) ** 2
-          );
-          if (distance < fishItem.size) {
-            f.eaten = true;
-            fishItem.bubbles.push({ x: fishItem.x, y: fishItem.y, life: 30 });
-          }
-        });
-        return f;
-      })
-      .filter((f) => !f.eaten || f.eaten);
+    foodArr.forEach((f: Food) => {
+      ctx.fillStyle = "#FFD700";
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, 8, 0, Math.PI * 2);
+      ctx.fill();
 
-    updatedFood.forEach((f) => {
-      if (!f.eaten) {
-        ctx.fillStyle = "#8B4513";
-        ctx.beginPath();
-        ctx.arc(f.x, f.y, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#D2691E";
-        ctx.beginPath();
-        ctx.arc(f.x, f.y, 2, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.arc(f.x - 2, f.y - 2, 3, 0, Math.PI * 2);
+      ctx.fill();
     });
+  };
 
-    setFoodFn(updatedFood.filter((f) => !f.eaten));
+  const drawFish = (ctx: CanvasRenderingContext2D, fish: FishItem) => {
+    ctx.save();
+    ctx.translate(fish.x, fish.y);
+    ctx.rotate(Math.PI + Math.atan2(fish.vy, fish.vx));
+    ctx.scale(1, fish.vx < 0 ? -1 : 1);
+
+    // Scale the fish based on its size
+    const scale = fish.size / 30;
+    ctx.scale(scale, scale);
+
+    // Draw fish body
+    ctx.fillStyle = fish.color;
+    ctx.beginPath();
+    ctx.moveTo(-30, 0);
+    ctx.bezierCurveTo(-20, 15, 15, 10, 40, 0);
+    ctx.bezierCurveTo(15, -10, -20, -15, -30, 0);
+    ctx.fill();
+
+    // Draw tail
+    ctx.save();
+    ctx.translate(40, 0);
+    ctx.scale(0.9 + 0.2 * Math.sin(fish.theta), 1);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(5, 10, 20, 8);
+    ctx.quadraticCurveTo(12, 5, 10, 0);
+    ctx.quadraticCurveTo(12, -5, 20, -8);
+    ctx.quadraticCurveTo(5, -10, 0, 0);
+    ctx.fill();
+    ctx.restore();
+
+    // Draw fin
+    ctx.save();
+    ctx.translate(-3, 0);
+    // Adjust fin rotation angle to match Small Fish page
+    ctx.rotate(
+      (Math.PI / 3 + (Math.PI / 10) * Math.sin(fish.phi)) *
+        (fish.vy > 0 ? -1 : 1)
+    );
+
+    ctx.beginPath();
+    // Draw fin in the same way as Small Fish page, ensuring fin tip points to tail
+    if (fish.vy > 0) {
+      ctx.moveTo(5, 0);
+      ctx.bezierCurveTo(10, 10, 10, 30, 0, 40);
+      ctx.bezierCurveTo(-12, 25, -8, 10, 0, 0);
+    } else {
+      ctx.moveTo(-5, 0);
+      ctx.bezierCurveTo(-10, -10, -10, -30, 0, -40);
+      ctx.bezierCurveTo(12, -25, 8, -10, 0, 0);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Draw eye - adjust position to be inside the fish head
+    ctx.fillStyle = "#FFF";
+    ctx.beginPath();
+    // Position the eye inside the fish head at (-25, -5) or (-25, 5)
+    // When fin is up (vy > 0), eye is at (-25, -5)
+    // When fin is down (vy <= 0), eye is at (-25, 5)
+    ctx.arc(-25, fish.vy > 0 ? -5 : 5, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    // Position the pupil inside the fish head at (-23, -5) or (-23, 5)
+    // When fin is up (vy > 0), eye is at (-23, -5)
+    // When fin is down (vy <= 0), eye is at (-23, 5)
+    ctx.arc(-23, fish.vy > 0 ? -5 : 5, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
   };
 
   const updateAndDrawFish = (
     ctx: CanvasRenderingContext2D,
     fishArr: FishItem[],
     setFishFn: React.Dispatch<React.SetStateAction<FishItem[]>>,
-    clickedCreatureId: string | null = null
+    clickedCreatureId: string | null = null,
+    foodArr: Food[],
+    setFoodFn?: React.Dispatch<React.SetStateAction<Food[]>>
   ) => {
     const time = Date.now() * 0.001;
 
     const updatedFish = fishArr.map((f) => {
+      // Find the closest food if any exists
+      let closestFood: Food | null = null;
+      let closestDistance = Infinity;
+
+      foodArr.forEach((foodItem: Food) => {
+        const distance = Math.sqrt(
+          (f.x - foodItem.x) ** 2 + (f.y - foodItem.y) ** 2
+        );
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestFood = foodItem;
+        }
+      });
+
+      // If there's food nearby, move towards it
+      if (closestFood && closestDistance < 300) {
+        const dx = (closestFood as Food).x - f.x;
+        const dy = (closestFood as Food).y - f.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 5) {
+          f.vx = (dx / distance) * 1.5;
+          f.vy = (dy / distance) * 1.5;
+        }
+      } else {
+        // Normal random movement if no food is nearby
+        if (Math.random() < 0.02) {
+          f.vx += (Math.random() - 0.5) * 0.5;
+          f.vy += (Math.random() - 0.5) * 0.5;
+        }
+
+        // Limit speed
+        const speed = Math.sqrt(f.vx * f.vx + f.vy * f.vy);
+        const maxSpeed = 2;
+        if (speed > maxSpeed) {
+          f.vx = (f.vx / speed) * maxSpeed;
+          f.vy = (f.vy / speed) * maxSpeed;
+        }
+      }
+
       f.x += f.vx;
       f.y += f.vy;
 
-      if (f.x < 0 || f.x > ctx.canvas.width) f.vx *= -1;
-      if (f.y < 50 || f.y > ctx.canvas.height - 50) f.vy *= -1;
+      // Boundary checks
+      if (f.x < 0) {
+        f.x = 0;
+        f.vx *= -1;
+      } else if (f.x > ctx.canvas.width) {
+        f.x = ctx.canvas.width;
+        f.vx *= -1;
+      }
+
+      if (f.y < 50) {
+        f.y = 50;
+        f.vy *= -1;
+      } else if (f.y > ctx.canvas.height - 50) {
+        f.y = ctx.canvas.height - 50;
+        f.vy *= -1;
+      }
 
       if (Math.random() < 0.01) {
         f.bubbles.push({ x: f.x, y: f.y, life: 60 });
@@ -488,139 +645,14 @@ export default function AIFishPage() {
         return bubble.life > 0;
       });
 
-      if (!f.theta) f.theta = 0;
-      if (!f.phi) f.phi = 0;
       f.theta += Math.PI / 20;
       f.phi += Math.PI / 30;
 
       return f;
     });
 
-    updatedFish.forEach((f, index) => {
-      const isClicked = clickedCreatureId === `fish-${index}`;
-
-      ctx.save();
-      if (isClicked) {
-        ctx.scale(1.3, 1.3);
-        ctx.translate(-f.x * 0.15, -f.y * 0.15);
-      }
-
-      if (f.image) {
-        const img = new Image();
-        img.src = f.image;
-        img.onload = () => {
-          ctx.save();
-          ctx.translate(f.x, f.y);
-          ctx.rotate(Math.atan2(f.vy, f.vx));
-          if (f.vx < 0) {
-            ctx.scale(1, -1);
-          }
-          ctx.drawImage(img, -f.size / 2, -f.size / 2, f.size, f.size);
-          ctx.restore();
-        };
-        if (img.complete) {
-          ctx.save();
-          ctx.translate(f.x, f.y);
-          ctx.rotate(Math.atan2(f.vy, f.vx));
-          if (f.vx < 0) {
-            ctx.scale(1, -1);
-          }
-          ctx.drawImage(img, -f.size / 2, -f.size / 2, f.size, f.size);
-          ctx.restore();
-        }
-      } else {
-        ctx.save();
-        ctx.translate(f.x, f.y);
-        ctx.rotate(Math.atan2(f.vy, f.vx));
-        ctx.scale(f.vx > 0 ? 1 : -1, 1);
-
-        // Draw fish body with bezier curves
-        ctx.fillStyle = f.color;
-        ctx.beginPath();
-        ctx.moveTo(-f.size * 0.8, 0);
-        ctx.bezierCurveTo(
-          -f.size * 0.5,
-          f.size * 0.4,
-          f.size * 0.3,
-          f.size * 0.25,
-          f.size * 0.8,
-          0
-        );
-        ctx.bezierCurveTo(
-          f.size * 0.3,
-          -f.size * 0.25,
-          -f.size * 0.5,
-          -f.size * 0.4,
-          -f.size * 0.8,
-          0
-        );
-        ctx.fill();
-
-        // Draw animated tail
-        ctx.save();
-        ctx.translate(f.size * 0.8, 0);
-        const tailScale = 0.9 + 0.2 * Math.sin(f.theta || time * 5 + index);
-        ctx.scale(tailScale, 1);
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.quadraticCurveTo(
-          f.size * 0.15,
-          f.size * 0.25,
-          f.size * 0.5,
-          f.size * 0.2
-        );
-        ctx.quadraticCurveTo(f.size * 0.3, f.size * 0.125, f.size * 0.25, 0);
-        ctx.quadraticCurveTo(
-          f.size * 0.3,
-          -f.size * 0.125,
-          f.size * 0.5,
-          -f.size * 0.2
-        );
-        ctx.quadraticCurveTo(f.size * 0.15, -f.size * 0.25, 0, 0);
-        ctx.fill();
-        ctx.restore();
-
-        // Draw animated fin
-        ctx.save();
-        ctx.translate(-f.size * 0.1, 0);
-        const finAngle =
-          Math.PI / 6 + (Math.PI / 20) * Math.sin(f.phi || time * 3 + index);
-        ctx.rotate(finAngle);
-        ctx.beginPath();
-        ctx.moveTo(-f.size * 0.125, 0);
-        ctx.bezierCurveTo(
-          -f.size * 0.25,
-          -f.size * 0.25,
-          -f.size * 0.25,
-          -f.size * 0.75,
-          0,
-          -f.size
-        );
-        ctx.bezierCurveTo(
-          f.size * 0.3,
-          -f.size * 0.625,
-          f.size * 0.2,
-          -f.size * 0.25,
-          0,
-          0
-        );
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-
-        // Draw eye
-        ctx.fillStyle = "#FFF";
-        ctx.beginPath();
-        ctx.arc(-f.size * 0.2, -f.size * 0.15, f.size * 0.08, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#000";
-        ctx.beginPath();
-        ctx.arc(-f.size * 0.15, -f.size * 0.15, f.size * 0.04, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
-      }
+    updatedFish.forEach((f) => {
+      drawFish(ctx, f);
 
       f.bubbles.forEach((bubble) => {
         ctx.fillStyle = `rgba(255, 255, 255, ${bubble.life / 60})`;
@@ -628,18 +660,46 @@ export default function AIFishPage() {
         ctx.arc(bubble.x, bubble.y, 2, 0, Math.PI * 2);
         ctx.fill();
       });
-
-      ctx.restore();
     });
+
+    // After moving fish, detect collisions with food and remove eaten food
+    if (setFoodFn) {
+      const remainingFood: Food[] = [...foodArr];
+      for (let i = remainingFood.length - 1; i >= 0; i--) {
+        const foodItem = remainingFood[i];
+        let eatenByFish: FishItem | null = null;
+        for (const fishItem of updatedFish) {
+          const dx = foodItem.x - fishItem.x;
+          const dy = foodItem.y - fishItem.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < fishItem.size / 2 + 6) {
+            eatenByFish = fishItem;
+            // Add bubbles when fish eats food
+            if (!eatenByFish.bubbles) eatenByFish.bubbles = [];
+            eatenByFish.bubbles.push({
+              x: eatenByFish.x,
+              y: eatenByFish.y,
+              life: 30,
+            });
+            remainingFood.splice(i, 1);
+            break;
+          }
+        }
+      }
+      setFoodFn(remainingFood);
+    }
 
     setFishFn(updatedFish);
   };
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 relative" style={{overflow: "hidden"}}>
+    <div
+      className="w-full bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 relative overflow-hidden"
+      style={{ height: "calc(100vh - 64px)", marginTop: "64px" }}
+    >
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+Cjwvc3ZnPg==')] opacity-30 pointer-events-none"></div>
 
-      <div className="relative z-10 w-full h-full flex flex-col">
+      <div className="relative w-full h-full flex flex-col">
         <div className="flex-1 relative w-full">
           <canvas
             ref={canvasRef}
@@ -650,7 +710,7 @@ export default function AIFishPage() {
 
           <div
             className={`absolute ${
-              deviceType === "mobile" ? "right-2 top-20" : "right-4 top-20"
+              deviceType === "mobile" ? "right-2 top-4" : "right-4 top-4"
             } bg-white/20 backdrop-blur-sm rounded-lg p-3 shadow-lg`}
           >
             <button
@@ -682,11 +742,12 @@ export default function AIFishPage() {
                   return (
                     <div
                       key={i}
-                      className={`rounded-full cursor-pointer hover:scale-110 transition-transform ${
-                        deviceType === "mobile" ? "w-3 h-3" : "w-4 h-4"
-                      } bg-yellow-400`}
-                      draggable
+                      className={`rounded-full cursor-grab active:cursor-grabbing hover:scale-110 transition-transform ${
+                        deviceType === "mobile" ? "w-6 h-6" : "w-8 h-8"
+                      } bg-yellow-400 border-2 border-yellow-500 shadow-lg`}
+                      draggable={true}
                       onDragStart={handleFoodDragStart(foodItem)}
+                      title="Drag to feed fish"
                     />
                   );
                 }

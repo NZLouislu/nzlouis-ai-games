@@ -27,7 +27,15 @@ export default function Page() {
     let mxpos = 0;
     let mypos = 0;
 
-    function drawArrow(fromx: number, fromy: number, tox: number, toy: number, lw: number, hlen: number, color: string) {
+    function drawArrow(
+      fromx: number,
+      fromy: number,
+      tox: number,
+      toy: number,
+      lw: number,
+      hlen: number,
+      color: string
+    ) {
       const dx = tox - fromx;
       const dy = toy - fromy;
       const angle = Math.atan2(dy, dx);
@@ -41,18 +49,43 @@ export default function Page() {
       _ctx.stroke();
       _ctx.beginPath();
       _ctx.moveTo(tox, toy);
-      _ctx.lineTo(tox - hlen * Math.cos(angle - Math.PI / 6), toy - hlen * Math.sin(angle - Math.PI / 6));
-      _ctx.lineTo(tox - (hlen * Math.cos(angle)) / 2, toy - (hlen * Math.sin(angle)) / 2);
-      _ctx.lineTo(tox - hlen * Math.cos(angle + Math.PI / 6), toy - hlen * Math.sin(angle + Math.PI / 6));
+      _ctx.lineTo(
+        tox - hlen * Math.cos(angle - Math.PI / 6),
+        toy - hlen * Math.sin(angle - Math.PI / 6)
+      );
+      _ctx.lineTo(
+        tox - (hlen * Math.cos(angle)) / 2,
+        toy - (hlen * Math.sin(angle)) / 2
+      );
+      _ctx.lineTo(
+        tox - hlen * Math.cos(angle + Math.PI / 6),
+        toy - hlen * Math.sin(angle + Math.PI / 6)
+      );
       _ctx.closePath();
       _ctx.stroke();
       _ctx.fill();
     }
 
     const colors = [
-      "#1abc9c","#1abc9c","#3498db","#9b59b6","#34495e","#16a085","#27ae60","#2980b9",
-      "#8e44ad","#2c3e50","#f1c40f","#e67e22","#e74c3c","#95a5a6","#f39c12","#d35400",
-      "#c0392b","#bdc3c7","#7f8c8d"
+      "#1abc9c",
+      "#1abc9c",
+      "#3498db",
+      "#9b59b6",
+      "#34495e",
+      "#16a085",
+      "#27ae60",
+      "#2980b9",
+      "#8e44ad",
+      "#2c3e50",
+      "#f1c40f",
+      "#e67e22",
+      "#e74c3c",
+      "#95a5a6",
+      "#f39c12",
+      "#d35400",
+      "#c0392b",
+      "#bdc3c7",
+      "#7f8c8d",
     ];
 
     _ctx.clearRect(0, 0, stage.w, stage.h);
@@ -61,7 +94,15 @@ export default function Page() {
       const length = Math.random() * 250 + 50;
       const myx = 360 + Math.sin(angle) * length;
       const myy = 360 - Math.cos(angle) * length;
-      drawArrow(myx, myy, myx + (length / 6) * Math.sin(angle), myy - (length / 6) * Math.cos(angle), length / 30, length / 30, "#c0392b");
+      drawArrow(
+        myx,
+        myy,
+        myx + (length / 6) * Math.sin(angle),
+        myy - (length / 6) * Math.cos(angle),
+        length / 30,
+        length / 30,
+        "#c0392b"
+      );
     }
     const explode = new Image();
     explode.src = _canvas.toDataURL("image/png");
@@ -72,7 +113,15 @@ export default function Page() {
       const length = Math.random() * 480 + 50;
       const myx = stage.w / 2 + Math.sin(angle) * length;
       const myy = stage.h - Math.cos(angle) * length;
-      drawArrow(myx, myy, myx + (length / 6) * Math.sin(angle), myy - (length / 6) * Math.cos(angle), length / 30, length / 30, "#2c3e50");
+      drawArrow(
+        myx,
+        myy,
+        myx + (length / 6) * Math.sin(angle),
+        myy - (length / 6) * Math.cos(angle),
+        length / 30,
+        length / 30,
+        "#2c3e50"
+      );
     }
     const explodeb = new Image();
     explodeb.src = _canvas.toDataURL("image/png");
@@ -81,11 +130,19 @@ export default function Page() {
     _ctx.fillStyle = "rgba(236,240,241,1)";
     _ctx.fillRect(0, 0, stage.w, stage.h);
     for (let i = 0; i < 200; i++) {
-      const angle = Math.random() * Math.PI / Math.PI * 180;
+      const angle = ((Math.random() * Math.PI) / Math.PI) * 180;
       const length = Math.random() * 250 + 50;
       const myx = Math.random() * stage.w;
       const myy = Math.random() * stage.h;
-      drawArrow(myx, myy, myx + (length / 6) * Math.sin(angle), myy - (length / 6) * Math.cos(angle), length / 30, length / 30, colors[Math.floor(Math.random() * colors.length)]);
+      drawArrow(
+        myx,
+        myy,
+        myx + (length / 6) * Math.sin(angle),
+        myy - (length / 6) * Math.cos(angle),
+        length / 30,
+        length / 30,
+        colors[Math.floor(Math.random() * colors.length)]
+      );
     }
 
     _ctx.fillStyle = "rgba(236,240,241,0.9)";
@@ -222,7 +279,15 @@ export default function Page() {
         angle = Math.atan(dx / dy);
       }
 
-      drawArrow(stage.w / 2, stage.h, stage.w / 2 - Math.sin(angle) * 150, stage.h - Math.cos(angle) * 150, 30, 20, "#2c3e50");
+      drawArrow(
+        stage.w / 2,
+        stage.h,
+        stage.w / 2 - Math.sin(angle) * 150,
+        stage.h - Math.cos(angle) * 150,
+        30,
+        20,
+        "#2c3e50"
+      );
 
       for (let e = 0; e < explosions.length; e++) {
         if (explosions[e].ty === 1) {
@@ -241,7 +306,7 @@ export default function Page() {
           _ctx.globalAlpha = 1 - explosions[e].t / stage.h;
           _ctx.drawImage(
             myimg,
-            explosions[e].x - ((explosions[e].t * stage.w) / stage.h) / 2,
+            explosions[e].x - (explosions[e].t * stage.w) / stage.h / 2,
             stage.h - explosions[e].t,
             (explosions[e].t * stage.w) / stage.h,
             explosions[e].t
@@ -303,16 +368,27 @@ export default function Page() {
     const onMouseMove = (e: MouseEvent) => motchmove(e);
     const onMouseUp = () => motchend();
     const onTouchStart = (e: TouchEvent) => {
-      e.preventDefault();
-      if (e.touches[0]) motchstart(e.touches[0]);
+      // 检查触摸点是否在canvas内
+      const touch = e.touches[0];
+      if (touch && touch.target === _canvas) {
+        e.preventDefault();
+        motchstart(touch);
+      }
     };
     const onTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      if (e.touches[0]) motchmove(e.touches[0]);
+      // 检查触摸点是否在canvas内
+      const touch = e.touches[0];
+      if (touch && touch.target === _canvas) {
+        e.preventDefault();
+        motchmove(touch);
+      }
     };
     const onTouchEnd = (e: TouchEvent) => {
-      e.preventDefault();
-      motchend();
+      // 检查触摸点是否在canvas内
+      if (e.target === _canvas) {
+        e.preventDefault();
+        motchend();
+      }
     };
 
     let isAnimating = true;
@@ -321,7 +397,8 @@ export default function Page() {
       if (!isAnimating) return;
 
       try {
-        let trax = 0, tray = 0;
+        let trax = 0,
+          tray = 0;
         if (shake) {
           trax = Math.random() * 60 - 30;
           tray = Math.random() * 60 - 30;
@@ -374,7 +451,10 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="w-full bg-black overflow-hidden flex items-center justify-center" style={{height: "calc(100vh - 64px)", marginTop: "64px"}}>
+    <div
+      className="w-full bg-black overflow-hidden flex items-center justify-center"
+      style={{ height: "calc(100vh - 64px)", marginTop: "64px" }}
+    >
       <canvas
         ref={canvasRef}
         id="canvas"

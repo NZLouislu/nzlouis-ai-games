@@ -23,12 +23,21 @@ interface Fish {
   isOut: boolean;
   theta: number;
   phi: number;
+  color: string;
+  id: number;
+}
+
+interface Food {
+  x: number;
+  y: number;
+  id: string;
+  eaten: boolean;
 }
 
 const POINT_INTERVAL = 5;
-const FISH_COUNT = 3;
+const FISH_COUNT = 4;
 const MAX_INTERVAL_COUNT = 50;
-const INIT_HEIGHT_RATE = 0.5;
+const INIT_HEIGHT_RATE = 0.9;
 const THRESHOLD = 50;
 const SPRING_CONSTANT = 0.03;
 const SPRING_FRICTION = 0.9;
@@ -36,12 +45,14 @@ const WAVE_SPREAD = 0.3;
 const ACCELERATION_RATE = 0.01;
 const GRAVITY = 0.4;
 
-export default function SwimmingFishPage() {
+export default function SmallFishPage() {
   const { deviceType } = useResponsive();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
   const [isRunning, setIsRunning] = useState(true);
+  const [food, setFood] = useState<Food[]>([]);
+  const [draggedFood, setDraggedFood] = useState<Food | null>(null);
 
   const rendererRef = useRef({
     width: 0,
@@ -90,36 +101,80 @@ export default function SwimmingFishPage() {
     }
   };
 
-  const createFish = useCallback((): Fish => {
-    const renderer = rendererRef.current;
-    const direction = Math.random() < 0.5;
+  const createFish = useCallback(
+    (index: number): Fish => {
+      const renderer = rendererRef.current;
+      const direction = Math.random() < 0.5;
 
-    const fish: Fish = {
-      direction,
-      x: direction ? renderer.width + THRESHOLD : -THRESHOLD,
-      y: 0,
-      previousY: 0,
-      vx: getRandomValue(4, 10) * (direction ? -1 : 1),
-      vy: 0,
-      ay: 0,
-      isOut: false,
-      theta: 0,
-      phi: 0,
+      // 定义4种颜色的鱼，确保每种颜色只有一条鱼
+      const colors = ["#FF6B6B", "#4169E1", "#87CEEB", "#FFD700"]; // 红色、蓝色、浅蓝色、黄色
+      const color = colors[index % colors.length]; // 根据索引分配颜色
+
+      const fish: Fish = {
+        id: index, // 添加ID
+        direction,
+        x: direction ? renderer.width + THRESHOLD : -THRESHOLD,
+        y: 0,
+        previousY: 0,
+        vx: getRandomValue(1, 3) * (direction ? -1 : 1),
+        vy: 0,
+        ay: 0,
+        isOut: false,
+        theta: 0,
+        phi: 0,
+        color,
+      };
+
+      if (renderer.reverse) {
+        fish.y = getRandomValue(renderer.height * 0.1, renderer.height * 0.3);
+        fish.vy = getRandomValue(0.5, 1.5);
+        fish.ay = getRandomValue(0.01, 0.05);
+      } else {
+        // 确保鱼在水面下方合适的位置生成
+        const waterSurfaceY = renderer.height * INIT_HEIGHT_RATE;
+        fish.y = getRandomValue(waterSurfaceY + 20, renderer.height * 0.8);
+        fish.vy = getRandomValue(-1.5, -0.5);
+        fish.ay = getRandomValue(-0.05, -0.01);
+      }
+
+      fish.previousY = fish.y;
+      return fish;
+    },
+    [getRandomValue]
+  );
+
+  const createFood = (x: number, y: number) => {
+    const newFood: Food = {
+      x,
+      y,
+      id: Date.now().toString(),
+      eaten: false,
     };
+    setFood((prev) => [...prev, newFood]);
+  };
 
-    if (renderer.reverse) {
-      fish.y = getRandomValue(renderer.height * 0.1, renderer.height * 0.4);
-      fish.vy = getRandomValue(2, 5);
-      fish.ay = getRandomValue(0.05, 0.2);
-    } else {
-      fish.y = getRandomValue(renderer.height * 0.6, renderer.height * 0.9);
-      fish.vy = getRandomValue(-5, -2);
-      fish.ay = getRandomValue(-0.2, -0.05);
+  const handleFoodDragStart = (foodItem: Food) => (event: React.DragEvent) => {
+    setDraggedFood(foodItem);
+    event.dataTransfer.setData("text/plain", foodItem.id);
+    event.dataTransfer.effectAllowed = "copy";
+  };
+
+  const handleCanvasDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const container = containerRef.current;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      createFood(x, y);
     }
+    setDraggedFood(null);
+  };
 
-    fish.previousY = fish.y;
-    return fish;
-  }, [getRandomValue]);
+  const handleCanvasDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  };
 
   const generateEpicenter = (x: number, y: number, velocity: number) => {
     const renderer = rendererRef.current;
@@ -182,23 +237,76 @@ export default function SwimmingFishPage() {
       fish.y += fish.vy;
       fish.vy += fish.ay;
 
+      // Find the closest food if any exists
+      let closestFood: Food | null = null;
+      let closestDistance = Infinity;
+
+      food.forEach((foodItem: Food) => {
+        const distance = Math.sqrt(
+          (fish.x - foodItem.x) ** 2 + (fish.y - foodItem.y) ** 2
+        );
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestFood = foodItem;
+        }
+      });
+
+      // If there's food nearby, move towards it
+      if (closestFood && closestDistance < 200) {
+        const dx = (closestFood as Food).x - fish.x;
+        const dy = (closestFood as Food).y - fish.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 5) {
+          fish.vx = (dx / distance) * 1.5;
+          fish.vy = (dy / distance) * 1.5;
+        }
+      }
+
+      // 定义边界
+      const waterSurfaceY = renderer.height * INIT_HEIGHT_RATE;
+      const topBoundary = waterSurfaceY + 5; // 水面以下5像素
+      const bottomBoundary = renderer.height - 25; // 距离画布底部25像素
+
+      // 左右边界检查
+      if (fish.x < -THRESHOLD) {
+        fish.x = -THRESHOLD;
+        fish.vx = Math.abs(fish.vx); // 反转方向
+      } else if (fish.x > renderer.width + THRESHOLD) {
+        fish.x = renderer.width + THRESHOLD;
+        fish.vx = -Math.abs(fish.vx); // 反转方向
+      }
+
+      // 上下边界检查
+      // 上边界检查（不能游到水面上）
+      if (fish.y < topBoundary) {
+        fish.y = topBoundary;
+        fish.vy = Math.abs(fish.vy); // 向下反弹
+      }
+      // 下边界检查（不能游出画布底部）
+      else if (fish.y > bottomBoundary) {
+        fish.y = bottomBoundary;
+        fish.vy = -Math.abs(fish.vy); // 向上反弹
+      }
+
+      // 保持鱼在水面下区域活动
       if (renderer.reverse) {
-        if (fish.y > renderer.height * INIT_HEIGHT_RATE) {
+        if (fish.y > waterSurfaceY) {
           fish.vy -= GRAVITY;
           fish.isOut = true;
         } else {
           if (fish.isOut) {
-            fish.ay = getRandomValue(0.05, 0.2);
+            fish.ay = getRandomValue(0.01, 0.05);
           }
           fish.isOut = false;
         }
       } else {
-        if (fish.y < renderer.height * INIT_HEIGHT_RATE) {
+        if (fish.y < waterSurfaceY) {
           fish.vy += GRAVITY;
           fish.isOut = true;
         } else {
           if (fish.isOut) {
-            fish.ay = getRandomValue(-0.2, -0.05);
+            fish.ay = getRandomValue(-0.05, -0.01);
           }
           fish.isOut = false;
         }
@@ -217,15 +325,15 @@ export default function SwimmingFishPage() {
         fish.y - fish.previousY
       );
 
+      // 当鱼游到屏幕边缘时反转方向而不是重新创建
       if (
         (fish.vx > 0 && fish.x > renderer.width + THRESHOLD) ||
         (fish.vx < 0 && fish.x < -THRESHOLD)
       ) {
-        const newFish = createFish();
-        Object.assign(fish, newFish);
+        fish.vx = -fish.vx; // 反转方向
       }
     },
-    [getRandomValue, createFish]
+    [getRandomValue, food]
   );
 
   const drawFish = (ctx: CanvasRenderingContext2D, fish: Fish) => {
@@ -234,7 +342,7 @@ export default function SwimmingFishPage() {
     ctx.rotate(Math.PI + Math.atan2(fish.vy, fish.vx));
     ctx.scale(1, fish.direction ? 1 : -1);
 
-    ctx.fillStyle = "rgba(100, 150, 200, 0.8)";
+    ctx.fillStyle = fish.color;
     ctx.beginPath();
     ctx.moveTo(-30, 0);
     ctx.bezierCurveTo(-20, 15, 15, 10, 40, 0);
@@ -273,7 +381,34 @@ export default function SwimmingFishPage() {
     ctx.closePath();
     ctx.fill();
     ctx.restore();
+
+    ctx.save();
+    ctx.translate(-20, -10);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.arc(0, 0, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#000000";
+    ctx.beginPath();
+    ctx.arc(2, 0, 2, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
+
+    ctx.restore();
+  };
+
+  const drawFood = (ctx: CanvasRenderingContext2D, foodArr: Food[]) => {
+    foodArr.forEach((f: Food) => {
+      ctx.fillStyle = "#FFD700";
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.arc(f.x - 2, f.y - 2, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
   };
 
   const setup = useCallback(() => {
@@ -284,8 +419,7 @@ export default function SwimmingFishPage() {
     const renderer = rendererRef.current;
     renderer.width = container.offsetWidth;
     renderer.height = container.offsetHeight;
-    renderer.fishCount =
-      (((FISH_COUNT * renderer.width) / 500) * renderer.height) / 500;
+    renderer.fishCount = FISH_COUNT;
 
     canvas.width = renderer.width;
     canvas.height = renderer.height;
@@ -294,7 +428,10 @@ export default function SwimmingFishPage() {
     renderer.fishes = [];
     renderer.intervalCount = MAX_INTERVAL_COUNT;
 
-    renderer.fishes.push(createFish());
+    // 创建4条不同颜色的鱼
+    for (let i = 0; i < FISH_COUNT; i++) {
+      renderer.fishes.push(createFish(i));
+    }
     createSurfacePoints();
   }, [createFish]);
 
@@ -363,7 +500,7 @@ export default function SwimmingFishPage() {
       if (renderer.fishes.length < renderer.fishCount) {
         if (--renderer.intervalCount === 0) {
           renderer.intervalCount = MAX_INTERVAL_COUNT;
-          renderer.fishes.push(createFish());
+          renderer.fishes.push(createFish(renderer.fishes.length));
         }
       }
 
@@ -371,7 +508,32 @@ export default function SwimmingFishPage() {
         updateFish(fish);
       }
 
+      // Check for fish-food collisions
+      const remainingFood = [...food];
+      for (let i = remainingFood.length - 1; i >= 0; i--) {
+        const foodItem = remainingFood[i];
+        for (const fish of renderer.fishes) {
+          const dx = foodItem.x - fish.x;
+          const dy = foodItem.y - fish.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 20) {
+            remainingFood.splice(i, 1);
+            break;
+          }
+        }
+      }
+      if (remainingFood.length !== food.length) {
+        setFood(remainingFood);
+      }
+
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
       ctx.clearRect(0, 0, renderer.width, renderer.height);
+
+      drawFood(ctx, food);
 
       for (const fish of renderer.fishes) {
         drawFish(ctx, fish);
@@ -421,113 +583,60 @@ export default function SwimmingFishPage() {
       style={{ overflowX: "hidden" }}
     >
       <div
-        className={`absolute top-20 ${
-          deviceType === "mobile" ? "left-2" : "left-4"
-        } z-10 bg-white/20 backdrop-blur-sm rounded-lg p-3 space-y-2 ${
-          deviceType === "mobile" ? "max-w-[calc(100%-1rem)]" : "max-w-xs"
-        }`}
-      >
-        <h2
-          className={`font-bold text-blue-800 ${
-            deviceType === "mobile" ? "text-base mb-2" : "text-lg mb-4"
-          }`}
-        >
-          Swimming Fish Effect
-        </h2>
-
-        <button
-          onClick={toggleAnimation}
-          className={`px-3 py-1 rounded-lg font-medium transition-all w-full ${
-            isRunning
-              ? "bg-red-500 hover:bg-red-600 text-white"
-              : "bg-green-500 hover:bg-green-600 text-white"
-          } ${deviceType === "mobile" ? "text-sm" : "text-base"}`}
-        >
-          {isRunning ? "Pause" : "Start"}
-        </button>
-
-        <button
-          onClick={resetAnimation}
-          className={`w-full px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-all ${
-            deviceType === "mobile" ? "text-sm" : "text-base"
-          }`}
-        >
-          Reset
-        </button>
-
-        <div
-          className={`text-blue-800 space-y-1 ${
-            deviceType === "mobile" ? "text-xs" : "text-sm"
-          }`}
-        >
-          <p>Fish Count: {rendererRef.current.fishes.length}</p>
-          <p>Direction: {rendererRef.current.reverse ? "Up" : "Down"}</p>
-          {deviceType !== "mobile" && (
-            <>
-              <p>Click water to reverse direction</p>
-              <p>Move mouse over water for ripples</p>
-            </>
-          )}
-          {deviceType === "mobile" && (
-            <>
-              <p>Tap water to reverse direction</p>
-              <p>Move finger over water for ripples</p>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div
         ref={containerRef}
-        className={`fixed bottom-0 left-0 w-full ${
-          deviceType === "mobile"
-            ? "h-124"
-            : deviceType === "tablet"
-            ? "h-132"
-            : "h-148"
-        } opacity-90 z-50`}
+        className="fixed bottom-0 left-0 w-full h-148 opacity-90 z-50"
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
         onClick={handleClick}
+        onDrop={handleCanvasDrop}
+        onDragOver={handleCanvasDragOver}
         style={{ cursor: "pointer" }}
       >
         <canvas ref={canvasRef} className="w-full h-full" />
       </div>
 
-      <main className="flex-1 flex items-center justify-center mt-40 px-4">
-        <div className="text-center text-blue-800 max-w-2xl">
-          <h1
-            className={`font-bold mb-4 ${
-              deviceType === "mobile"
-                ? "text-xl"
-                : deviceType === "tablet"
-                ? "text-2xl"
-                : "text-4xl"
-            }`}
-          >
-            Swimming Fish Animation
-          </h1>
-          <p
-            className={`mb-3 ${
-              deviceType === "mobile"
-                ? "text-base"
-                : deviceType === "tablet"
-                ? "text-lg"
-                : "text-xl"
-            }`}
-          >
-            Watch the fish swim at the bottom of the screen with realistic water
-            physics.
-          </p>
-          <p
-            className={`${
-              deviceType === "mobile" ? "text-sm" : "text-base"
-            } opacity-80`}
-          >
-            {deviceType === "mobile"
-              ? "Move your finger over the water area to create ripples, or tap to reverse the swimming direction."
-              : "Move your mouse over the water area to create ripples, or click to reverse the swimming direction."}
-          </p>
+      {/* Fish Food Controls */}
+      <div
+        className={`absolute ${
+          deviceType === "mobile" ? "right-2 top-4" : "right-4 top-4"
+        } bg-white/20 backdrop-blur-sm rounded-lg p-3 shadow-lg z-50`}
+      >
+        <div
+          className={`text-white font-medium mb-1 ${
+            deviceType === "mobile" ? "text-xs" : "text-sm"
+          }`}
+        >
+          Fish Food
+        </div>
+        <div className="grid grid-cols-3 gap-1">
+          {Array.from({ length: deviceType === "mobile" ? 4 : 6 }).map(
+            (_, i) => {
+              const foodItem: Food = {
+                x: 0,
+                y: 0,
+                id: `food-${i}`,
+                eaten: false,
+              };
+              return (
+                <div
+                  key={i}
+                  className={`rounded-full cursor-grab active:cursor-grabbing hover:scale-110 transition-transform ${
+                    deviceType === "mobile" ? "w-6 h-6" : "w-8 h-8"
+                  } bg-yellow-400 border-2 border-yellow-500 shadow-lg`}
+                  draggable={true}
+                  onDragStart={handleFoodDragStart(foodItem)}
+                  title="Drag to feed fish"
+                />
+              );
+            }
+          )}
+        </div>
+      </div>
+
+      <main className="flex-1 flex items-center justify-center pb-30 px-4">
+        {" "}
+        <div className="text-center mt-24 text-blue-800 max-w-2xl">
+          <h1 className="font-bold mb-4 text-2xl">Small Fish Animation</h1>
         </div>
       </main>
     </div>
