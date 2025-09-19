@@ -615,8 +615,7 @@ export default function AIFishPage() {
     setFoodFn?: React.Dispatch<React.SetStateAction<Food[]>>
   ) => {
     const time = Date.now() * 0.001;
-    // 根据设备类型调整速度因子，移动端设置为正常速度的20%
-    const speedFactor = deviceType === "mobile" ? 0.2 : 1;
+    const speedFactor = deviceType === "mobile" ? 0.1 : 1;
 
     const updatedFish = fishArr.map((f) => {
       // Find the closest food if any exists
