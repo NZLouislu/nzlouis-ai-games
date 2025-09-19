@@ -54,14 +54,14 @@ export default function AIFishPage() {
   const [draggedFood, setDraggedFood] = useState<Food | null>(null);
 
   const [fish, setFish] = useState<FishItem[]>([
-    // 原有的3条鱼
+    // 保留红色、蓝色、黄色的三条鱼
     {
       x: 100,
       y: 200,
       vx: 1,
       vy: 0.5,
       size: 30,
-      color: "#FF6B6B",
+      color: "#FF6B6B", // 红色
       bubbles: [],
       theta: 0,
       phi: 0,
@@ -72,7 +72,7 @@ export default function AIFishPage() {
       vx: -1.2,
       vy: 0.3,
       size: 30,
-      color: "#4ECDC4",
+      color: "#4169E1", // 蓝色
       bubbles: [],
       theta: 0,
       phi: 0,
@@ -82,51 +82,6 @@ export default function AIFishPage() {
       y: 250,
       vx: 0.8,
       vy: -0.4,
-      size: 30,
-      color: "#45B7D1",
-      bubbles: [],
-      theta: 0,
-      phi: 0,
-    },
-    // 从Small Fish页面添加的4条小鱼
-    {
-      x: 150,
-      y: 300,
-      vx: 1.2,
-      vy: 0.3,
-      size: 30,
-      color: "#FF6B6B", // 红色
-      bubbles: [],
-      theta: 0,
-      phi: 0,
-    },
-    {
-      x: 250,
-      y: 350,
-      vx: -0.8,
-      vy: -0.2,
-      size: 30,
-      color: "#4169E1", // 蓝色
-      bubbles: [],
-      theta: 0,
-      phi: 0,
-    },
-    {
-      x: 400,
-      y: 280,
-      vx: 1.0,
-      vy: 0.4,
-      size: 30,
-      color: "#87CEEB", // 浅蓝色
-      bubbles: [],
-      theta: 0,
-      phi: 0,
-    },
-    {
-      x: 550,
-      y: 320,
-      vx: -1.1,
-      vy: -0.3,
       size: 30,
       color: "#FFD700", // 黄色
       bubbles: [],
@@ -203,6 +158,13 @@ export default function AIFishPage() {
     event.dataTransfer.effectAllowed = "copy";
   };
 
+  // 添加触摸开始处理函数
+  const handleFoodTouchStart =
+    (foodItem: Food) => (event: React.TouchEvent) => {
+      event.preventDefault();
+      setDraggedFood(foodItem);
+    };
+
   const handleCanvasDropReact = (event: React.DragEvent<HTMLCanvasElement>) => {
     event.preventDefault();
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -219,6 +181,36 @@ export default function AIFishPage() {
   ) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "copy";
+  };
+
+  // 添加画布触摸处理函数
+  const handleCanvasTouchStart = (
+    event: React.TouchEvent<HTMLCanvasElement>
+  ) => {
+    event.preventDefault();
+  };
+
+  const handleCanvasTouchMove = (
+    event: React.TouchEvent<HTMLCanvasElement>
+  ) => {
+    event.preventDefault();
+  };
+
+  const handleCanvasTouchEnd = (event: React.TouchEvent<HTMLCanvasElement>) => {
+    event.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const touch = event.changedTouches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+
+    // 只在水面区域（y > 50）添加食物
+    if (y > 50) {
+      createFood(x, y);
+    }
+    setDraggedFood(null);
   };
 
   useEffect(() => {
@@ -302,9 +294,36 @@ export default function AIFishPage() {
       event.preventDefault();
     };
 
+    // 添加原生触摸事件处理
+    const handleCanvasTouchEndNative = (ev: Event) => {
+      const event = ev as TouchEvent;
+      event.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      if (rect && event.changedTouches.length > 0) {
+        const touch = event.changedTouches[0];
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+
+        // 只在水面区域（y > 50）添加食物
+        if (y > 50) {
+          createFood(x, y);
+        }
+      }
+      setDraggedFood(null);
+    };
+
+    const handleCanvasTouchMoveNative = (ev: Event) => {
+      const event = ev as TouchEvent;
+      event.preventDefault();
+    };
+
     canvas.addEventListener("click", handleCanvasClick);
     canvas.addEventListener("drop", onCanvasDropNative);
     canvas.addEventListener("dragover", onCanvasDragOverNative);
+    canvas.addEventListener("touchend", handleCanvasTouchEndNative);
+    canvas.addEventListener("touchmove", handleCanvasTouchMoveNative, {
+      passive: false,
+    });
 
     const animate = () => {
       if (!isAnimating) return;
@@ -336,6 +355,8 @@ export default function AIFishPage() {
       canvas.removeEventListener("click", handleCanvasClick);
       canvas.removeEventListener("drop", onCanvasDropNative);
       canvas.removeEventListener("dragover", onCanvasDragOverNative);
+      canvas.removeEventListener("touchend", handleCanvasTouchEndNative);
+      canvas.removeEventListener("touchmove", handleCanvasTouchMoveNative);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = 0;
@@ -706,6 +727,9 @@ export default function AIFishPage() {
             className="w-full h-full bg-gradient-to-b from-blue-300/50 to-blue-600/50"
             onDrop={handleCanvasDropReact}
             onDragOver={handleCanvasDragOverReact}
+            onTouchStart={handleCanvasTouchStart}
+            onTouchMove={handleCanvasTouchMove}
+            onTouchEnd={handleCanvasTouchEnd}
           />
 
           <div
@@ -747,6 +771,7 @@ export default function AIFishPage() {
                       } bg-yellow-400 border-2 border-yellow-500 shadow-lg`}
                       draggable={true}
                       onDragStart={handleFoodDragStart(foodItem)}
+                      onTouchStart={handleFoodTouchStart(foodItem)}
                       title="Drag to feed fish"
                     />
                   );

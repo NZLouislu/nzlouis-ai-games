@@ -20,13 +20,14 @@ export default function Navbar() {
   }
 
   const items = [
-    { label: "🛠 AI Fish", href: "/ai-fish" },
-    { label: "✊🖐️✌ Rock Paper Scissors", href: "/rock-paper-scissors" },
+    { label: "🎮 Geometry Dash", href: "/geometry-dash" },
+    { label: "🖐️ Rock Paper Scissors", href: "/rock-paper-scissors" },
     { label: "🐟 Swimming Fish", href: "/swimming-fish" },
     // { label: "🐠 Small Fish", href: "/small-fish" },
     { label: "🏹 Arrows Defense", href: "/arrows-defense" },
     { label: "🎈 Air Balloon", href: "/air-balloon" },
     { label: "🐾 Desktop Pet", href: "/desktop-pet" },
+    { label: "🛠 AI Fish", href: "/ai-fish" },
     // { label: "🎰 Gacha Machine", href: "/gacha-machine" }
   ];
 
