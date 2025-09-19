@@ -615,6 +615,7 @@ export default function AIFishPage() {
     setFoodFn?: React.Dispatch<React.SetStateAction<Food[]>>
   ) => {
     const time = Date.now() * 0.001;
+    const speedFactor = deviceType === "mobile" ? 1.5 : 1;
 
     const updatedFish = fishArr.map((f) => {
       // Find the closest food if any exists
@@ -638,19 +639,19 @@ export default function AIFishPage() {
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance > 5) {
-          f.vx = (dx / distance) * 1.5;
-          f.vy = (dy / distance) * 1.5;
+          f.vx = (dx / distance) * 1.5 * speedFactor;
+          f.vy = (dy / distance) * 1.5 * speedFactor;
         }
       } else {
         // Normal random movement if no food is nearby
         if (Math.random() < 0.02) {
-          f.vx += (Math.random() - 0.5) * 0.5;
-          f.vy += (Math.random() - 0.5) * 0.5;
+          f.vx += (Math.random() - 0.5) * 0.5 * speedFactor;
+          f.vy += (Math.random() - 0.5) * 0.5 * speedFactor;
         }
 
         // Limit speed
         const speed = Math.sqrt(f.vx * f.vx + f.vy * f.vy);
-        const maxSpeed = 2;
+        const maxSpeed = 2 * speedFactor;
         if (speed > maxSpeed) {
           f.vx = (f.vx / speed) * maxSpeed;
           f.vy = (f.vy / speed) * maxSpeed;

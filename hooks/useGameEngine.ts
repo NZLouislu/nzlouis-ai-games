@@ -35,12 +35,44 @@ export default function useGameEngine(
 
   // Audio context for generating sounds
   const audioContextRef = useRef<AudioContext | null>(null);
+  // Flag to track if background music should be playing
+  const isBackgroundMusicPlayingRef = useRef(false);
+  // Interval ID for background music
+  const backgroundMusicIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize audio context on first user interaction
   const initAudioContext = () => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext ||
         (window as any).webkitAudioContext)();
+    }
+  };
+
+  // Clean up background music interval
+  const stopBackgroundMusic = () => {
+    if (backgroundMusicIntervalRef.current) {
+      clearInterval(backgroundMusicIntervalRef.current);
+      backgroundMusicIntervalRef.current = null;
+      isBackgroundMusicPlayingRef.current = false;
+    }
+  };
+
+  // Start background music loop
+  const startBackgroundMusic = () => {
+    // Stop any existing background music
+    stopBackgroundMusic();
+
+    // Only start if not muted and audio context exists
+    if (!isMuted && audioContextRef.current) {
+      isBackgroundMusicPlayingRef.current = true;
+
+      // Play background music every 2 seconds
+      backgroundMusicIntervalRef.current = setInterval(() => {
+        // Double-check mute state before playing
+        if (!isMuted && audioContextRef.current) {
+          playBackgroundMusic();
+        }
+      }, 2000);
     }
   };
 
@@ -78,6 +110,9 @@ export default function useGameEngine(
       cancelAnimationFrame(animationRef.current);
     }
 
+    // Stop any background music
+    stopBackgroundMusic();
+
     // Reset all refs to initial values (same as when hook is first created)
     playerRef.current = {
       x: 50,
@@ -108,6 +143,11 @@ export default function useGameEngine(
     // Initialize audio context if needed
     initAudioContext();
 
+    // Start background music if not muted
+    if (!isMuted) {
+      startBackgroundMusic();
+    }
+
     // Start a fresh animation frame
     animationRef.current = requestAnimationFrame(gameLoop);
   };
@@ -126,17 +166,37 @@ export default function useGameEngine(
         cancelAnimationFrame(animationRef.current);
       }
       animationRef.current = requestAnimationFrame(gameLoop);
+
+      // Restart background music if not muted
+      if (!isMuted) {
+        startBackgroundMusic();
+      }
     } else {
       // Pause game - cancel animation frame
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = 0;
       }
+
+      // Stop background music when pausing
+      stopBackgroundMusic();
     }
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
+    const newMuteState = !isMuted;
+    setIsMuted(newMuteState);
+
+    // Handle background music based on new mute state
+    if (newMuteState) {
+      // If muting, stop background music
+      stopBackgroundMusic();
+    } else {
+      // If unmuting and game is running, restart background music
+      if (gameRunning && !gameOver) {
+        startBackgroundMusic();
+      }
+    }
   };
 
   // Play a beep sound
@@ -176,19 +236,20 @@ export default function useGameEngine(
     if (isMuted || !audioContextRef.current) return;
 
     try {
-      // Create a reference to check mute state at timeout execution time
-      const muteStateAtStart = isMuted;
+      // Store the audio context reference to ensure it doesn't change during timeouts
+      const audioContext = audioContextRef.current;
+      // Store the mute state at the time of function call
+      const wasMuted = isMuted;
 
       // Play a sequence of notes for game over
       const notes = [350, 300, 250, 200];
       notes.forEach((freq, index) => {
         setTimeout(() => {
-          // Double-check both current mute state and the state when function started
-          // Also ensure audio context still exists
-          if (!isMuted && !muteStateAtStart && audioContextRef.current) {
+          // Check if still muted, audio context still exists, and wasn't muted when function started
+          if (!isMuted && !wasMuted && audioContextRef.current) {
             playBeep(freq, 200);
           }
-        }, index * 200);
+        }, index * 300); // Increased delay to 300ms for better spacing
       });
     } catch (error) {
       console.warn("Game over sound failed:", error);
@@ -298,6 +359,9 @@ export default function useGameEngine(
           cancelAnimationFrame(animationRef.current);
           animationRef.current = 0;
         }
+
+        // Stop background music
+        stopBackgroundMusic();
 
         // Play game over sound
         playGameOverSound();
@@ -456,6 +520,18 @@ export default function useGameEngine(
     animationRef.current = requestAnimationFrame(gameLoop);
   };
 
+  // Start background music when game starts
+  const startGame = () => {
+    if (!isMuted) {
+      startBackgroundMusic();
+    }
+  };
+
+  // Stop background music when game ends
+  const endGame = () => {
+    stopBackgroundMusic();
+  };
+
   const resizeCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -512,6 +588,9 @@ export default function useGameEngine(
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
+
+      // Clean up background music
+      stopBackgroundMusic();
 
       // Clean up audio context
       if (audioContextRef.current) {
