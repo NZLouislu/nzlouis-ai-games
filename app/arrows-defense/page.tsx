@@ -248,7 +248,7 @@ export default function Page() {
         }
         for (let b = 0; b < bullets.length; b++) {
           const dx = enemies[i].x - bullets[b].x;
-          const dy = enemies[i].y - bullets[b].y;
+          const dy = enemies[b].y - bullets[b].y;
           const dis = dx * dx + dy * dy;
           if (dis < 20 * 20) {
             explosions.push(Explosion(enemies[i].x, enemies[i].y, 1));
@@ -368,7 +368,6 @@ export default function Page() {
     const onMouseMove = (e: MouseEvent) => motchmove(e);
     const onMouseUp = () => motchend();
     const onTouchStart = (e: TouchEvent) => {
-      // 检查触摸点是否在canvas内
       const touch = e.touches[0];
       if (touch && touch.target === _canvas) {
         e.preventDefault();
@@ -376,7 +375,6 @@ export default function Page() {
       }
     };
     const onTouchMove = (e: TouchEvent) => {
-      // 检查触摸点是否在canvas内
       const touch = e.touches[0];
       if (touch && touch.target === _canvas) {
         e.preventDefault();
@@ -384,7 +382,6 @@ export default function Page() {
       }
     };
     const onTouchEnd = (e: TouchEvent) => {
-      // 检查触摸点是否在canvas内
       if (e.target === _canvas) {
         e.preventDefault();
         motchend();

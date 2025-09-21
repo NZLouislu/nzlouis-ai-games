@@ -106,12 +106,11 @@ export default function SmallFishPage() {
       const renderer = rendererRef.current;
       const direction = Math.random() < 0.5;
 
-      // 定义4种颜色的鱼，确保每种颜色只有一条鱼
-      const colors = ["#FF6B6B", "#4169E1", "#87CEEB", "#FFD700"]; // 红色、蓝色、浅蓝色、黄色
-      const color = colors[index % colors.length]; // 根据索引分配颜色
+      const colors = ["#FF6B6B", "#4169E1", "#87CEEB", "#FFD700"];
+      const color = colors[index % colors.length];
 
       const fish: Fish = {
-        id: index, // 添加ID
+        id: index,
         direction,
         x: direction ? renderer.width + THRESHOLD : -THRESHOLD,
         y: 0,
@@ -130,7 +129,6 @@ export default function SmallFishPage() {
         fish.vy = getRandomValue(0.5, 1.5);
         fish.ay = getRandomValue(0.01, 0.05);
       } else {
-        // 确保鱼在水面下方合适的位置生成
         const waterSurfaceY = renderer.height * INIT_HEIGHT_RATE;
         fish.y = getRandomValue(waterSurfaceY + 20, renderer.height * 0.8);
         fish.vy = getRandomValue(-1.5, -0.5);
@@ -237,7 +235,6 @@ export default function SmallFishPage() {
       fish.y += fish.vy;
       fish.vy += fish.ay;
 
-      // Find the closest food if any exists
       let closestFood: Food | null = null;
       let closestDistance = Infinity;
 
@@ -251,7 +248,6 @@ export default function SmallFishPage() {
         }
       });
 
-      // If there's food nearby, move towards it
       if (closestFood && closestDistance < 200) {
         const dx = (closestFood as Food).x - fish.x;
         const dy = (closestFood as Food).y - fish.y;
@@ -263,33 +259,26 @@ export default function SmallFishPage() {
         }
       }
 
-      // 定义边界
       const waterSurfaceY = renderer.height * INIT_HEIGHT_RATE;
-      const topBoundary = waterSurfaceY + 5; // 水面以下5像素
-      const bottomBoundary = renderer.height - 25; // 距离画布底部25像素
+      const topBoundary = waterSurfaceY + 5;
+      const bottomBoundary = renderer.height - 25;
 
-      // 左右边界检查
       if (fish.x < -THRESHOLD) {
         fish.x = -THRESHOLD;
-        fish.vx = Math.abs(fish.vx); // 反转方向
+        fish.vx = Math.abs(fish.vx);
       } else if (fish.x > renderer.width + THRESHOLD) {
         fish.x = renderer.width + THRESHOLD;
-        fish.vx = -Math.abs(fish.vx); // 反转方向
+        fish.vx = -Math.abs(fish.vx);
       }
 
-      // 上下边界检查
-      // 上边界检查（不能游到水面上）
       if (fish.y < topBoundary) {
         fish.y = topBoundary;
-        fish.vy = Math.abs(fish.vy); // 向下反弹
-      }
-      // 下边界检查（不能游出画布底部）
-      else if (fish.y > bottomBoundary) {
+        fish.vy = Math.abs(fish.vy);
+      } else if (fish.y > bottomBoundary) {
         fish.y = bottomBoundary;
-        fish.vy = -Math.abs(fish.vy); // 向上反弹
+        fish.vy = -Math.abs(fish.vy);
       }
 
-      // 保持鱼在水面下区域活动
       if (renderer.reverse) {
         if (fish.y > waterSurfaceY) {
           fish.vy -= GRAVITY;
@@ -325,12 +314,11 @@ export default function SmallFishPage() {
         fish.y - fish.previousY
       );
 
-      // 当鱼游到屏幕边缘时反转方向而不是重新创建
       if (
         (fish.vx > 0 && fish.x > renderer.width + THRESHOLD) ||
         (fish.vx < 0 && fish.x < -THRESHOLD)
       ) {
-        fish.vx = -fish.vx; // 反转方向
+        fish.vx = -fish.vx;
       }
     },
     [getRandomValue, food]
@@ -428,7 +416,6 @@ export default function SmallFishPage() {
     renderer.fishes = [];
     renderer.intervalCount = MAX_INTERVAL_COUNT;
 
-    // 创建4条不同颜色的鱼
     for (let i = 0; i < FISH_COUNT; i++) {
       renderer.fishes.push(createFish(i));
     }
@@ -508,7 +495,6 @@ export default function SmallFishPage() {
         updateFish(fish);
       }
 
-      // Check for fish-food collisions
       const remainingFood = [...food];
       for (let i = remainingFood.length - 1; i >= 0; i--) {
         const foodItem = remainingFood[i];
@@ -595,7 +581,6 @@ export default function SmallFishPage() {
         <canvas ref={canvasRef} className="w-full h-full" />
       </div>
 
-      {/* Fish Food Controls */}
       <div
         className={`absolute ${
           deviceType === "mobile" ? "right-2 top-4" : "right-4 top-4"

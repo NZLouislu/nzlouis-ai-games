@@ -20,7 +20,6 @@ const ResponsiveContext = createContext<ResponsiveContextType | undefined>(
 export function ResponsiveProvider({ children }: { children: ReactNode }) {
   const { deviceType, windowSize } = useDeviceType();
 
-  // 只在客户端渲染时提供上下文值
   if (typeof window === "undefined") {
     return <>{children}</>;
   }
@@ -35,7 +34,6 @@ export function ResponsiveProvider({ children }: { children: ReactNode }) {
 export function useResponsive() {
   const context = useContext(ResponsiveContext);
   if (context === undefined) {
-    // 在服务器端渲染时返回默认值
     if (typeof window === "undefined") {
       return {
         deviceType: "desktop" as DeviceType,
