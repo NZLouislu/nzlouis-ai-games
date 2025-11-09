@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import useDeviceType from "@/hooks/useDeviceType";
 
 type DeviceType = "mobile" | "tablet" | "laptop" | "desktop" | "wide";
@@ -19,13 +19,20 @@ const ResponsiveContext = createContext<ResponsiveContextType | undefined>(
 
 export function ResponsiveProvider({ children }: { children: ReactNode }) {
   const { deviceType, windowSize } = useDeviceType();
+  const [mounted, setMounted] = useState(false);
 
-  if (typeof window === "undefined") {
-    return <>{children}</>;
-  }
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 在服务端和客户端首次渲染时提供默认值，避免闪烁
+  const value = mounted ? { deviceType, windowSize } : {
+    deviceType: "desktop" as DeviceType,
+    windowSize: { width: 1200, height: 800 }
+  };
 
   return (
-    <ResponsiveContext.Provider value={{ deviceType, windowSize }}>
+    <ResponsiveContext.Provider value={value}>
       {children}
     </ResponsiveContext.Provider>
   );

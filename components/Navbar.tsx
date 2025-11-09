@@ -9,14 +9,10 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  function handleHome() {
+  function handleHome(e: React.MouseEvent) {
+    e.preventDefault();
     setOpen(false);
-    try {
-      window.focus();
-    } catch {}
-    setTimeout(() => {
-      router.push("/");
-    }, 10);
+    router.push("/");
   }
 
   const items = [
@@ -34,7 +30,7 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/30 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6">
-        <Link href="/" onClick={handleHome} aria-label="Home">
+        <Link href="/" onClick={handleHome} aria-label="Home" prefetch={true}>
           <Image
             src="/images/nzlouis-logo.png"
             alt="NZLouis logo — Louis Lu"
@@ -50,6 +46,7 @@ export default function Navbar() {
             <Link
               key={i.href}
               href={i.href}
+              prefetch={true}
               className="text-sm font-medium hover:text-blue-600 transition-colors whitespace-nowrap"
             >
               {i.label}
@@ -72,6 +69,7 @@ export default function Navbar() {
               <Link
                 key={i.href}
                 href={i.href}
+                prefetch={true}
                 className="block text-sm font-medium hover:text-blue-600 py-2"
                 onClick={() => setOpen(false)}
               >
