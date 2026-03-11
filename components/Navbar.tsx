@@ -16,6 +16,7 @@ export default function Navbar() {
   }
 
   const items = [
+    { label: "🏃 Platformer", href: "/platformer" },
     { label: "🏹 Arrows Defense", href: "/arrows-defense" },
     { label: "🎮 Geometry Dash", href: "/geometry-dash" },
     { label: "🖐️ Rock Paper Scissors", href: "/rock-paper-scissors" },
